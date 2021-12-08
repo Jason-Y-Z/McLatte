@@ -224,9 +224,14 @@ def simulate_treatment_vectors(
 
 def simulate_outcomes(
     X: np.ndarray, 
+    A: np.ndarray,
     N: int, 
-    T: int, 
-    C: int
+    M: int,
+    H: int, 
+    R: int,  
+    D: int,
+    K: int,
+    C: int,
 ) -> np.ndarray:
     """
     Simulate outcome measures for the study.
@@ -235,12 +240,27 @@ def simulate_outcomes(
     ----------
     X : np.ndarray of shape (N, T * R, D)
         Covariates, constructed from a linear component and a periodic component.
+
+    A : np.ndarray of shape (N, K)
+        Treatment indicator vectors, which indicate the cause configurations for each subject.
         
     N : int
         Number of subjects in the study.
 
-    T : int
-        Timespan of the simulation.
+    M : int
+        Pre-treatment timespan for outcome measurements (Y).
+    
+    H : int
+        (Post-)treatment timespan for outcome measurements (Y).
+
+    R : int
+        Covariate-outcome measurement interval ratio.
+
+    D : int
+        Number of features in the covariates.
+
+    K : int
+        Number of causes in the treatment.
     
     C : int
         Dimension of the latent factors.
@@ -250,18 +270,36 @@ def simulate_outcomes(
     Y : np.ndarray of shape (N, T)
         Outcome measures, which span the pre-treatment and treatment time.
     """
-    pca_feature = PCA(n_components=C)
-    pca_time = PCA(n_components=1)
-    C_ = np.stack([
-        np.squeeze(pca_time.fit_transform(
-            pca_feature.fit_transform(X[i]).T
-        ))
-        for i in range(N)
-    ])
-
-    Q = _simulate_multivariate_time_series(1, C // 3, C - C // 3, T).reshape((T, C))
-
-    return _sample_for_N_T(N, T, lambda i, t: np.random.normal(np.dot(Q[t], C_[i]), 1)).reshape((N, T))
+    X_pre, X_post = X[:, :M * R, :], X[:, M * R:, :]
+    
+    g = np.random.rand(1, M * R)
+    G = np.random.rand(K, H * R)
+    H_ = np.random.rand(D, C)
+    
+    C_pre = np.stack([np.squeeze(
+        g @ X_pre[i] @ H_
+    ) for i in range(N)])
+    C_post = np.stack([np.squeeze(
+        A[i] @ G @ X_post[i] @ H_
+    ) for i in range(N)])
+    Q = _simulate_multivariate_time_series(
+        1, 
+        C // 3, 
+        C - C // 3, 
+        M + H
+    ).reshape((M + H, C))
+    
+    Y_pre = _sample_for_N_T(
+        N, 
+        M, 
+        lambda i, t: np.random.normal(np.dot(Q[t], C_pre[i]), 1)
+    ).reshape((N, M))
+    Y_post = _sample_for_N_T(
+        N, 
+        H, 
+        lambda i, t: np.random.normal(np.dot(Q[t], C_post[i]), 1)
+    ).reshape((N, H))
+    return np.concatenate((Y_pre, Y_post), axis=1)
 
 
 def generate_simulation_data(
@@ -327,5 +365,5 @@ def generate_simulation_data(
     X = simulate_covariates(N, D // 4, D - D // 4, (M + H) * R)
     M_ = simulate_masking_vectors(N, D, (M + H) * R)
     A = simulate_treatment_vectors(N, K, treatment_repr)
-    Y = simulate_outcomes(X, N, M + H, C)
+    Y = simulate_outcomes(X, A, N, M, H, R, D, K, C)
     return X, M_, Y, A
