@@ -232,6 +232,7 @@ def simulate_outcomes(
     D: int,
     K: int,
     C: int,
+    return_c: bool = False,
 ) -> np.ndarray:
     """
     Simulate outcome measures for the study.
@@ -264,6 +265,9 @@ def simulate_outcomes(
     
     C : int
         Dimension of the latent factors.
+
+    return_c : bool
+        Whether to return the latent factors.
 
     Returns
     -------
@@ -299,6 +303,8 @@ def simulate_outcomes(
         H, 
         lambda i, t: np.random.normal(np.dot(Q[t], C_post[i]), 1)
     ).reshape((N, H))
+    if return_c:
+        return np.concatenate((Y_pre, Y_post), axis=1), C_post
     return np.concatenate((Y_pre, Y_post), axis=1)
 
 
