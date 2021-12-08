@@ -1,2 +1,2 @@
-# McSyncTwin
-Multi-cause synthetic twin 
+# McLatte
+Multi-Cause LAtent facTor iTe Estimator
