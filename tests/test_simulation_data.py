@@ -56,16 +56,30 @@ def test_simulate_treatment_vectors(N, K, mode):
 
 
 # Given
-@pytest.mark.parametrize('N', (50, 100))
+@pytest.mark.parametrize('N', (5, 10))
+@pytest.mark.parametrize('M', (5, 10))
+@pytest.mark.parametrize('H', (5, 10))
 @pytest.mark.parametrize('L', (5, 10))
 @pytest.mark.parametrize('P', (5, 10))
-@pytest.mark.parametrize('T', (50, 100))
+@pytest.mark.parametrize('R', (5, 10))
+@pytest.mark.parametrize('K', (10, 20))
 @pytest.mark.parametrize('C', (5, 10))
-def test_simulate_outcomes(N, L, P, T, C):
-    X = simulate_covariates(N, L, P, T)
+@pytest.mark.parametrize(
+    'mode', 
+    (
+        TreatmentRepr.BINARY, 
+        TreatmentRepr.BOUNDED, 
+        TreatmentRepr.REAL_VALUED
+    )
+)
+def test_simulate_outcomes(N, M, H, L, P, R, K, C, mode):
+    D = L + P
+    T = M + H
+    X = simulate_covariates(N, L, P, T * R)
+    A = simulate_treatment_vectors(N, K, mode)
 
     # When
-    Y = simulate_outcomes(X, N, T, C)
+    Y = simulate_outcomes(X, A, N, M, H, R, D, K, C)
 
     # Then
     assert Y.shape == (N, T)
