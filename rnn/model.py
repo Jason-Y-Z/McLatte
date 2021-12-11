@@ -34,7 +34,7 @@ class BaselineRnn(pl.LightningModule):
     ):
         super().__init__()
 
-        self._rnn = rnn
+        self._rnn = rnn.to(self.device)
         self._linear = nn.Linear(hidden_dim, output_dim)
         self._lr = lr
         self._gamma = gamma
@@ -90,21 +90,21 @@ def train_baseline_rnn(
     if test_run > 0:
         # Try loading from checkpoint
         try:
-            pl_model = BaselineRnn.load_from_checkpoint(os.path.join(os.getcwd(), f'results/rnn_{test_run}.ckpt'))
-        except Exception:
-            pl_model = None
-    if test_run <= 0 or pl_model is None:
-        rnn = RNNS[config['rnn_class']](
-            input_size=input_dim,
-            hidden_size=config['hidden_dim'],
-        )
-        pl_model = BaselineRnn(
-            rnn=rnn,
-            hidden_dim=config['hidden_dim'],
-            output_dim=1,
-            lr=lr, 
-            gamma=gamma, 
-        )
+            return BaselineRnn.load_from_checkpoint(os.path.join(os.getcwd(), f'results/rnn_{test_run}.ckpt'))
+        except Exception as e:
+            print(e)
+
+    rnn = RNNS[config['rnn_class']](
+        input_size=input_dim,
+        hidden_size=config['hidden_dim'],
+    )
+    pl_model = BaselineRnn(
+        rnn=rnn,
+        hidden_dim=config['hidden_dim'],
+        output_dim=1,
+        lr=lr, 
+        gamma=gamma, 
+    )
     
     data_module = ShiftingDataModule(
         Y=Y,

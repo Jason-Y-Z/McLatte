@@ -8,15 +8,13 @@ https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 import synctwin.grud as grud
 import torch
 import torch.nn as nn
-from synctwin._config import DEVICE
 
 
 class RegularDecoder(nn.Module):
-    def __init__(self, hidden_dim, output_dim, max_seq_len, device=DEVICE):
+    def __init__(self, hidden_dim, output_dim, max_seq_len):
         super(RegularDecoder, self).__init__()
-        self.device = device
         self.max_seq_len = max_seq_len
-        self.lstm = nn.LSTM(hidden_dim, hidden_dim).to(device)
+        self.lstm = nn.LSTM(hidden_dim, hidden_dim)
         self.lin = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, C, t, mask):
@@ -35,11 +33,10 @@ class RegularDecoder(nn.Module):
 
 
 class LSTMTimeDecoder(nn.Module):
-    def __init__(self, hidden_dim, output_dim, max_seq_len, device=DEVICE):
+    def __init__(self, hidden_dim, output_dim, max_seq_len):
         super(LSTMTimeDecoder, self).__init__()
-        self.device = device
         self.max_seq_len = max_seq_len
-        self.lstm = nn.LSTM(hidden_dim * 2, hidden_dim).to(device)
+        self.lstm = nn.LSTM(hidden_dim * 2, hidden_dim)
         self.lin = nn.Linear(hidden_dim, output_dim)
         self.time_lin = nn.Linear(1, hidden_dim)
 
@@ -65,11 +62,10 @@ class LSTMTimeDecoder(nn.Module):
 
 
 class GRUDDecoder(nn.Module):
-    def __init__(self, hidden_dim, output_dim, max_seq_len, device=DEVICE):
+    def __init__(self, hidden_dim, output_dim, max_seq_len):
         super(GRUDDecoder, self).__init__()
-        self.device = device
         self.max_seq_len = max_seq_len
-        self.grud = grud.GRUD(hidden_dim, hidden_dim, device=device).to(device)
+        self.grud = grud.GRUD(hidden_dim, hidden_dim)
         self.lin = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, C, t, mask):
@@ -88,12 +84,11 @@ class GRUDDecoder(nn.Module):
 
 
 class LinearDecoder(nn.Module):
-    def __init__(self, hidden_dim, output_dim, max_seq_len, device=DEVICE):
+    def __init__(self, hidden_dim, output_dim, max_seq_len):
         super(LinearDecoder, self).__init__()
         assert output_dim == 1
-        self.device = device
         self.max_seq_len = max_seq_len
-        self.lin = nn.Linear(hidden_dim, max_seq_len).to(device)
+        self.lin = nn.Linear(hidden_dim, max_seq_len)
 
     def forward(self, C, t, mask):
         # C: B, Dh -> B, T

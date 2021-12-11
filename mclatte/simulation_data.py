@@ -243,12 +243,17 @@ def simulate_treatment_vectors(
         Treatment indicator vectors, which indicate the cause configurations for each subject.
     """
     if mode is TreatmentRepr.BINARY:
-        return np.stack([
-            np.random.binomial(
-                np.ones(K, dtype=np.int32), 
-                np.ones(K) / 2 + p_0 * mu_conf
-            ) for _ in range(N)
-        ])
+        all_data = np.concatenate((
+            np.stack([
+                np.random.binomial(
+                    np.ones(K, dtype=np.int32), 
+                    _logit(np.ones(K) / 2 + p_0 * mu_conf)
+                ) for _ in range(round(N * 0.8))
+            ]),
+            np.zeros((round(N * 0.2), K)),  # make sure there are enough control subjects
+        ), axis=0)
+        np.random.shuffle(all_data)
+        return all_data
     if mode is TreatmentRepr.BOUNDED:
         all_data = np.concatenate((
             np.random.uniform(0, 1 + p_0 * mu_conf, (round(N * 0.8), K)),
