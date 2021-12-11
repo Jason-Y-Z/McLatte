@@ -6,8 +6,11 @@ Data generation utilities for the simulation study.
 
 import enum
 import numpy as np
-from sklearn.decomposition import PCA
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Union
+
+
+def _logit(x):
+    return 1.0 / (1 + np.exp(-x))
 
 
 def _sample_for_N_T(
@@ -45,7 +48,8 @@ def _simulate_multivariate_time_series(
     L: int,
     P: int,
     T: int, 
-) -> np.ndarray:
+    return_conf: bool = False,
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Simulate a multivariate normal time series.
 
@@ -62,18 +66,24 @@ def _simulate_multivariate_time_series(
     
     T : int
         Length of the series.
+    
+    return_conf : bool
+        Whether to return the confounding parameters.
 
     Returns
     -------
     X : np.ndarray of shape (N, T, L + P)
         A multivariate normal time series, 
         constructed from a linear component and a periodic component.
+    
+    mu_conf : float; only if return_conf is True
+        Temporal confounding parameter.
     """
     t = np.arange(T)
 
     # Initialise parameters for the linear component
-    alpha_linear = np.random.uniform(-1 / T, 1 / T, (N, L))
-    beta_linear = np.random.uniform(-1, 1, (N, L))
+    alpha_linear = np.random.uniform(-100 / T, 100 / T, (N, L))
+    beta_linear = np.random.uniform(-10, 10, (N, L))
     mu_linear = (
         alpha_linear[:, None, :] 
             * t[None, :, None] 
@@ -86,8 +96,8 @@ def _simulate_multivariate_time_series(
     )
 
     # Initialise parameters for the periodic component
-    alpha_periodic = np.random.uniform(-1, 1, (N, P))
-    beta_periodic = np.random.uniform(-1, 1, (N, P))
+    alpha_periodic = np.random.uniform(-10, 10, (N, P))
+    beta_periodic = np.random.uniform(-10, 10, (N, P))
     omega_periodic = np.random.uniform(-np.pi, np.pi, (N, P))
     mu_periodic = (
         alpha_periodic[:, None, :] 
@@ -98,6 +108,14 @@ def _simulate_multivariate_time_series(
         'ijk,ilk->ijl', 
         (comp_max := np.random.uniform(-1, 1, (N, P, P))), 
         comp_max
+    )
+
+    # Calculate confounding parameters
+    mu_conf = _logit(
+        np.linalg.norm(alpha_linear) 
+        + np.linalg.norm(alpha_periodic) 
+        + np.linalg.norm(beta_linear) 
+        + np.linalg.norm(beta_periodic)
     )
 
     # Draw samples from the distributions defined by the initialised parameters
@@ -113,7 +131,8 @@ def _simulate_multivariate_time_series(
         x_it = np.concatenate([x_linear, x_periodic])
         return x_it
     
-    return _sample_for_N_T(N, T, sample_x)
+    samples = _sample_for_N_T(N, T, sample_x)
+    return (samples, mu_conf) if return_conf else samples
 
 
 def simulate_covariates(
@@ -121,7 +140,8 @@ def simulate_covariates(
     L: int,
     P: int,
     T: int, 
-) -> np.ndarray:
+    return_conf: bool = False,
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Simulate the covariates time series.
 
@@ -139,12 +159,18 @@ def simulate_covariates(
     T : int
         Timespan of the simulation.
 
+    return_conf : bool
+        Whether to return the confounding parameters.
+
     Returns
     -------
     X : np.ndarray of shape (N, T, L + P)
         Covariates, constructed from a linear component and a periodic component.
+    
+    mu_conf : float; only if return_conf is True
+        Temporal confounding parameter.
     """
-    return _simulate_multivariate_time_series(N, L, P, T)
+    return _simulate_multivariate_time_series(N, L, P, T, return_conf)
 
 
 def simulate_masking_vectors(
@@ -187,7 +213,9 @@ class TreatmentRepr(enum.Enum):
 def simulate_treatment_vectors(
     N: int,
     K: int,
-    mode: TreatmentRepr
+    mode: TreatmentRepr,
+    p_0: float = 0,
+    mu_conf: float = 0,
 ):
     """
     Simulate the masking vectors for the covariates.
@@ -202,6 +230,12 @@ def simulate_treatment_vectors(
     
     mode : TreatmentRepr
         Representation of the treatment, can be binary, bounded or real-valued.
+    
+    p_0 : float
+        Temporal confounding coefficient.
+    
+    mu_conf : float
+        Temporal confounding parameter.
 
     Returns
     -------
@@ -212,13 +246,23 @@ def simulate_treatment_vectors(
         return np.stack([
             np.random.binomial(
                 np.ones(K, dtype=np.int32), 
-                np.ones(K) / 2
+                np.ones(K) / 2 + p_0 * mu_conf
             ) for _ in range(N)
         ])
     if mode is TreatmentRepr.BOUNDED:
-        return np.random.rand(N, K)
+        all_data = np.concatenate((
+            np.random.uniform(0, 1 + p_0 * mu_conf, (round(N * 0.8), K)),
+            np.zeros((round(N * 0.2), K)),  # make sure there are enough control subjects
+        ), axis=0)
+        np.random.shuffle(all_data)
+        return all_data
     if mode is TreatmentRepr.REAL_VALUED:
-        return np.random.normal(0, 1, (N, K))
+        all_data = np.concatenate((
+            np.random.normal(p_0 * mu_conf, 1, (round(N * 0.8), K)),
+            np.zeros((round(N * 0.2), K)),  # make sure there are enough control subjects
+        ), axis=0)
+        np.random.shuffle(all_data)
+        return all_data
     raise ValueError(f'Unrecognized treatment representation: mode = {mode}')
 
 
@@ -233,7 +277,7 @@ def simulate_outcomes(
     K: int,
     C: int,
     return_c: bool = False,
-) -> np.ndarray:
+):
     """
     Simulate outcome measures for the study.
 
@@ -271,14 +315,20 @@ def simulate_outcomes(
 
     Returns
     -------
-    Y : np.ndarray of shape (N, T)
-        Outcome measures, which span the pre-treatment and treatment time.
+    Y_pre : np.ndarray of shape (N, M)
+        Pre-treatment outcome measures.
+    
+    Y_post : np.ndarray of shape (N, H)
+        Post-treatment outcome measures.
+
+    C_post : np.ndarray of shape (N, C); only if return_c is True
+        Post-treatment latent factors.
     """
     X_pre, X_post = X[:, :M * R, :], X[:, M * R:, :]
     
     g = np.random.rand(1, M * R)
-    G = np.random.rand(K, H * R)
-    H_ = np.random.rand(D, C)
+    G = np.random.rand(K, H * R) / H
+    H_ = np.random.rand(D, C) * 1e-3
     
     C_pre = np.stack([np.squeeze(
         g @ X_pre[i] @ H_
@@ -304,8 +354,8 @@ def simulate_outcomes(
         lambda i, t: np.random.normal(np.dot(Q[t], C_post[i]), 1)
     ).reshape((N, H))
     if return_c:
-        return np.concatenate((Y_pre, Y_post), axis=1), C_post
-    return np.concatenate((Y_pre, Y_post), axis=1)
+        return Y_pre, Y_post, C_post
+    return Y_pre, Y_post
 
 
 def generate_simulation_data(
@@ -317,11 +367,14 @@ def generate_simulation_data(
     K: int,
     C: int,
     treatment_repr: TreatmentRepr,
+    p_0: float = 0,
 ) -> Tuple[
     np.ndarray, 
     np.ndarray, 
     np.ndarray, 
-    np.ndarray
+    np.ndarray, 
+    np.ndarray,
+    np.ndarray, 
 ]:
     """
     Generate data for simulation study.
@@ -353,23 +406,41 @@ def generate_simulation_data(
     
     treatment_repr : TreatmentRepr
         Representation used for the treatment.
+    
+    p_0 : float
+        Temporal confounding coefficient.
 
     Returns
     -------
-    X : np.ndarray of shape (N, R * (M + H), D)
+    X : np.ndarray of shape (N, R * M, D)
         Covariates, constructed from a linear component and a periodic component.
     
-    M_ : np.ndarray of shape (N, R * (M + H), D)
+    M_ : np.ndarray of shape (N, R * M, D)
         Masking vectors, which indicate whether a certain feature in covariates is measured.
 
-    Y : np.ndarray of shape (N, M + H)
-        Outcome measures, which span the pre-treatment and treatment time.
+    Y_pre : np.ndarray of shape (N, M)
+        Pre-treatment outcome measures.
+    
+    Y_post : np.ndarray of shape (N, H)
+        Post-treatment outcome measures.
     
     A : np.ndarray of shape (N, K)
         Treatment indicator vectors, which indicate the cause configurations for each subject.
+    
+    T : np.ndarray of shape (N, R * M, D)
+        Measurement time for each quantity.
     """
-    X = simulate_covariates(N, D // 4, D - D // 4, (M + H) * R)
+    X, mu_conf = simulate_covariates(N, D // 4, D - D // 4, (M + H) * R, return_conf=True)
     M_ = simulate_masking_vectors(N, D, (M + H) * R)
-    A = simulate_treatment_vectors(N, K, treatment_repr)
-    Y = simulate_outcomes(X, A, N, M, H, R, D, K, C)
-    return X, M_, Y, A
+    A = simulate_treatment_vectors(N, K, treatment_repr, p_0, mu_conf)
+    Y_pre, Y_post = simulate_outcomes(X, A, N, M, H, R, D, K, C)
+    T = np.repeat(
+        np.repeat(
+            np.arange(-R * M, R * H).reshape((1, -1, 1)),
+            repeats=D,
+            axis=2,
+        ),
+        repeats=N,
+        axis=0,
+    )
+    return X[:, :M * R, :], M_[:, :M * R, :], Y_pre, Y_post, A, T[:, :M * R, :]
