@@ -79,11 +79,11 @@ def test_simulate_outcomes(N, M, H, L, P, R, K, C, mode):
     A = simulate_treatment_vectors(N, K, mode)
 
     # When
-    Y = simulate_outcomes(X, A, N, M, H, R, D, K, C)
+    Y_pre, Y_post = simulate_outcomes(X, A, N, M, H, R, D, K, C)
 
     # Then
-    assert Y.shape == (N, T)
-
+    assert Y_pre.shape == (N, M)
+    assert Y_post.shape == (N, H)
 
 
 # Given
@@ -104,10 +104,12 @@ def test_simulate_outcomes(N, M, H, L, P, R, K, C, mode):
 )
 def test_generate_simulation_data(N, M, H, R, D, K, C, mode):
     # When
-    X, M_, Y, A = generate_simulation_data(N, M, H, R, D, K, C, mode)
+    X, M_, Y_pre, Y_post, A, T = generate_simulation_data(N, M, H, R, D, K, C, mode)
 
     # Then
-    assert X.shape == (N, R * (M + H), D)
-    assert M_.shape == (N, R * (M + H), D)
-    assert Y.shape == (N, M + H)
+    assert X.shape == (N, R * M, D)
+    assert M_.shape == (N, R * M, D)
+    assert Y_pre.shape == (N, M)
+    assert Y_post.shape == (N, H)
     assert A.shape == (N, K)
+    assert T.shape == (N, R * M, D)
