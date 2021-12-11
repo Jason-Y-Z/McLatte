@@ -9,22 +9,20 @@ import math
 import synctwin.grud as grud
 import torch
 import torch.nn as nn
-from synctwin._config import DEVICE
 
 
 class RegularEncoder(nn.Module):
-    def __init__(self, input_dim, hidden_dim, bidirectional=True, device=DEVICE):
+    def __init__(self, input_dim, hidden_dim, bidirectional=True):
         super(RegularEncoder, self).__init__()
         self.input_dim = input_dim
-        self.device = device
 
-        self.lstm = nn.LSTM(input_dim, hidden_dim, bidirectional=bidirectional).to(device)
+        self.lstm = nn.LSTM(input_dim, hidden_dim, bidirectional=bidirectional)
         if bidirectional:
             self.hidden_dim = hidden_dim * 2
         else:
             self.hidden_dim = hidden_dim
 
-        attn_v_init = torch.ones(self.hidden_dim).to(device)
+        attn_v_init = torch.ones(self.hidden_dim)
         self.attn_v = nn.Parameter(attn_v_init)
 
     def forward(self, x, t, mask):
@@ -41,15 +39,14 @@ class RegularEncoder(nn.Module):
 
 
 class GRUDEncoder(nn.Module):
-    def __init__(self, input_dim, hidden_dim, device=DEVICE):
+    def __init__(self, input_dim, hidden_dim):
         super(GRUDEncoder, self).__init__()
         self.input_dim = input_dim
-        self.device = device
 
-        self.grud = grud.GRUD(input_dim, hidden_dim, device=device).to(device)
+        self.grud = grud.GRUD(input_dim, hidden_dim)
         self.hidden_dim = hidden_dim
 
-        attn_v_init = torch.ones(self.hidden_dim).to(device)
+        attn_v_init = torch.ones(self.hidden_dim)
         self.attn_v = nn.Parameter(attn_v_init)
 
     def forward(self, x, t, mask):

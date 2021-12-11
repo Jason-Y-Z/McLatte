@@ -14,7 +14,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
-from synctwin._config import D_TYPE, DEVICE
+from synctwin._config import D_TYPE
 from synctwin.dataset import SyncTwinDataModule
 from synctwin.decoder import RegularDecoder
 from synctwin.encoder import RegularEncoder
@@ -34,7 +34,6 @@ class SyncTwin(nn.Module):
         encoder=None,
         decoder=None,
         decoder_Y=None,
-        device=DEVICE,
         dtype=D_TYPE,
         reduce_gpu_memory=False,
         inference_only=False,
@@ -44,18 +43,18 @@ class SyncTwin(nn.Module):
 
         self.n_unit = n_unit
         self.n_treated = n_treated
-        self.encoder = encoder.to(device)
-        self.decoder = decoder.to(device)
+        self.encoder = encoder
+        self.decoder = decoder
         if decoder_Y is not None:
             self.decoder_Y = decoder_Y
         if reduce_gpu_memory:
-            init_B = (torch.ones(1, 1, dtype=dtype, device=device)) * 1.0e-4
+            init_B = (torch.ones(1, 1, dtype=dtype)) * 1.0e-4
         elif inference_only:
-            init_B = (torch.ones(n_treated, n_unit, dtype=dtype, device=device)) * 1.0e-4
+            init_B = (torch.ones(n_treated, n_unit, dtype=dtype)) * 1.0e-4
         else:
-            init_B = (torch.ones(n_unit + n_treated, n_unit, dtype=dtype, device=device)) * 1.0e-4
-        self.B = nn.Parameter(init_B).to(device)
-        self.C0 = torch.zeros(n_unit, self.encoder.hidden_dim, dtype=dtype, requires_grad=False).to(device)
+            init_B = (torch.ones(n_unit + n_treated, n_unit, dtype=dtype)) * 1.0e-4
+        self.B = nn.Parameter(init_B)
+        self.C0 = torch.zeros(n_unit, self.encoder.hidden_dim, dtype=dtype, requires_grad=False)
         # regularization strength of matrix B
         self.reg_B = reg_B
         
@@ -202,12 +201,22 @@ def train_synctwin(
     D: int,
     n_treated: int,
     pre_trt_x_len: int,
+    test_run: int = 0,
     checkpoint_dir=None,  # kept for compatibility with ray[tune]
 ):
     """
     Helper function for ray-tune to run hp search.
     """
     # Parse the configuration for current run
+    epochs, lr, gamma = config['epochs'], config['lr'], config['gamma']
+
+    if test_run > 0:
+        # Try loading from checkpoint
+        try:
+            return SyncTwinPl.load_from_checkpoint(os.path.join(os.getcwd(), f'results/synctwin_{test_run}.ckpt'))
+        except Exception as e:
+            print(e)
+    
     enc = RegularEncoder(input_dim=D, hidden_dim=config['hidden_dim'])
     dec = RegularDecoder(hidden_dim=enc.hidden_dim, output_dim=enc.input_dim, max_seq_len=pre_trt_x_len)
     sync_twin = SyncTwin(
@@ -221,6 +230,13 @@ def train_synctwin(
         encoder=enc,
         decoder=dec,
     )
+    pl_model = SyncTwinPl(
+        sync_twin=sync_twin, 
+        lr=lr, 
+        gamma=gamma, 
+        y_control=torch.from_numpy(Y_control).float(),
+    )
+
     data_module = SyncTwinDataModule(
         X=X,
         M=M_,
@@ -229,7 +245,6 @@ def train_synctwin(
         Y_mask=Y_mask,
         batch_size=config['batch_size'], 
     )
-    epochs, lr, gamma = config['epochs'], config['lr'], config['gamma']
     metrics = {'loss': 'ptl/loss', 'valid_loss': 'ptl/valid_loss'}
     callbacks = [
         TuneReportCallback(metrics, on='validation_end'), 
@@ -254,10 +269,8 @@ def train_synctwin(
         callbacks=callbacks,
         progress_bar_refresh_rate=0,
     )
-    pl_model = SyncTwinPl(
-        sync_twin=sync_twin, 
-        lr=lr, 
-        gamma=gamma, 
-        y_control=torch.from_numpy(Y_control).float().cuda(),
-    )
     trainer.fit(pl_model, data_module)
+    if test_run > 0:
+        trainer.save_checkpoint(os.path.join(os.getcwd(), f'results/synctwin_{test_run}.ckpt'))
+
+    return pl_model

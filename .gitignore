@@ -7,8 +7,11 @@ __pycache__/
 *.so
 
 # Data files
-data/
+data/tune_*
+data/diabetes/
+data/mclatte-test/
 wandb/
+tests/data
 
 # Distribution / packaging
 .Python
