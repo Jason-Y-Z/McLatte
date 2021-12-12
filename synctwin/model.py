@@ -14,7 +14,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
-from synctwin._config import D_TYPE
+from synctwin._config import D_TYPE, DEVICE
 from synctwin.dataset import SyncTwinDataModule
 from synctwin.decoder import RegularDecoder
 from synctwin.encoder import RegularEncoder
@@ -35,6 +35,7 @@ class SyncTwin(nn.Module):
         decoder=None,
         decoder_Y=None,
         dtype=D_TYPE,
+        device=DEVICE,
         reduce_gpu_memory=False,
         inference_only=False,
     ):
@@ -43,18 +44,18 @@ class SyncTwin(nn.Module):
 
         self.n_unit = n_unit
         self.n_treated = n_treated
-        self.encoder = encoder
-        self.decoder = decoder
+        self.encoder = encoder.to(device)
+        self.decoder = decoder.to(device)
         if decoder_Y is not None:
             self.decoder_Y = decoder_Y
         if reduce_gpu_memory:
-            init_B = (torch.ones(1, 1, dtype=dtype)) * 1.0e-4
+            init_B = (torch.ones(1, 1, dtype=dtype).to(device)) * 1.0e-4
         elif inference_only:
-            init_B = (torch.ones(n_treated, n_unit, dtype=dtype)) * 1.0e-4
+            init_B = (torch.ones(n_treated, n_unit, dtype=dtype).to(device)) * 1.0e-4
         else:
-            init_B = (torch.ones(n_unit + n_treated, n_unit, dtype=dtype)) * 1.0e-4
-        self.B = nn.Parameter(init_B)
-        self.C0 = torch.zeros(n_unit, self.encoder.hidden_dim, dtype=dtype, requires_grad=False)
+            init_B = (torch.ones(n_unit + n_treated, n_unit, dtype=dtype).to(device)) * 1.0e-4
+        self.B = nn.Parameter(init_B).to(device)
+        self.C0 = torch.zeros(n_unit, self.encoder.hidden_dim, dtype=dtype, requires_grad=False).to(device)
         # regularization strength of matrix B
         self.reg_B = reg_B
         
@@ -144,6 +145,7 @@ class SyncTwinPl(pl.LightningModule):
     ):
         super().__init__()
 
+        self.save_hyperparameters()
         self._sync_twin = sync_twin
         self._lr = lr
         self._gamma = gamma
@@ -213,29 +215,31 @@ def train_synctwin(
     if test_run > 0:
         # Try loading from checkpoint
         try:
-            return SyncTwinPl.load_from_checkpoint(os.path.join(os.getcwd(), f'results/synctwin_{test_run}.ckpt'))
+            pl_model = SyncTwinPl.load_from_checkpoint(os.path.join(os.getcwd(), f'results/synctwin_{test_run}.ckpt'))
         except Exception as e:
             print(e)
-    
-    enc = RegularEncoder(input_dim=D, hidden_dim=config['hidden_dim'])
-    dec = RegularDecoder(hidden_dim=enc.hidden_dim, output_dim=enc.input_dim, max_seq_len=pre_trt_x_len)
-    sync_twin = SyncTwin(
-        n_unit=N - n_treated,
-        n_treated=n_treated,
-        reg_B=config['reg_B'],
-        lam_express=config['lam_express'],
-        lam_recon=config['lam_recon'],
-        lam_prognostic=config['lam_prognostic'],
-        tau=config['tau'],
-        encoder=enc,
-        decoder=dec,
-    )
-    pl_model = SyncTwinPl(
-        sync_twin=sync_twin, 
-        lr=lr, 
-        gamma=gamma, 
-        y_control=torch.from_numpy(Y_control).float(),
-    )
+            pl_model = None
+
+    if test_run <= 0 or pl_model is None:    
+        enc = RegularEncoder(input_dim=D, hidden_dim=config['hidden_dim'])
+        dec = RegularDecoder(hidden_dim=enc.hidden_dim, output_dim=enc.input_dim, max_seq_len=pre_trt_x_len)
+        sync_twin = SyncTwin(
+            n_unit=N - n_treated,
+            n_treated=n_treated,
+            reg_B=config['reg_B'],
+            lam_express=config['lam_express'],
+            lam_recon=config['lam_recon'],
+            lam_prognostic=config['lam_prognostic'],
+            tau=config['tau'],
+            encoder=enc,
+            decoder=dec,
+        )
+        pl_model = SyncTwinPl(
+            sync_twin=sync_twin, 
+            lr=lr, 
+            gamma=gamma, 
+            y_control=torch.from_numpy(Y_control).float(),
+        )
 
     data_module = SyncTwinDataModule(
         X=X,
