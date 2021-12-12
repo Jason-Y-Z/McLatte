@@ -31,6 +31,7 @@ class McLatte(pl.LightningModule):
     ):
         super().__init__()
 
+        self.save_hyperparameters()
         self._encoder = encoder.to(self.device)
         self._decoder = decoder.to(self.device)
         self._lambda_r = lambda_r
@@ -107,30 +108,32 @@ def train_mclatte(
     if test_run > 0:
         # Try loading from checkpoint
         try:
-            return McLatte.load_from_checkpoint(os.path.join(os.getcwd(), f'results/mclatte_{test_run}.ckpt'))
+            pl_model = McLatte.load_from_checkpoint(os.path.join(os.getcwd(), f'results/mclatte_{test_run}.ckpt'))
         except Exception as e:
             print(e)
+            pl_model = None
 
-    encoder = ENCODERS[config['encoder_class']](
-        input_dim=input_dim,
-        hidden_dim=config['hidden_dim'],
-        treatment_dim=treatment_dim,
-    )
-    decoder = DECODERS[config['decoder_class']](
-        hidden_dim=config['hidden_dim'], 
-        output_dim=input_dim, 
-        max_seq_len=R * M,
-    )
-    pl_model = McLatte(
-        encoder=encoder, 
-        decoder=decoder, 
-        lambda_r=config['lambda_r'], 
-        lambda_s=config['lambda_s'], 
-        lr=lr, 
-        gamma=gamma, 
-        post_trt_seq_len=H, 
-        hidden_dim=config['hidden_dim']
-    )
+    if test_run <= 0 or pl_model is None: 
+        encoder = ENCODERS[config['encoder_class']](
+            input_dim=input_dim,
+            hidden_dim=config['hidden_dim'],
+            treatment_dim=treatment_dim,
+        )
+        decoder = DECODERS[config['decoder_class']](
+            hidden_dim=config['hidden_dim'], 
+            output_dim=input_dim, 
+            max_seq_len=R * M,
+        )
+        pl_model = McLatte(
+            encoder=encoder, 
+            decoder=decoder, 
+            lambda_r=config['lambda_r'], 
+            lambda_s=config['lambda_s'], 
+            lr=lr, 
+            gamma=gamma, 
+            post_trt_seq_len=H, 
+            hidden_dim=config['hidden_dim']
+        )
 
     data_module = TimeSeriesDataModule(
         X=X,
