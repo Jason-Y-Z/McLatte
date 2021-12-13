@@ -17,7 +17,7 @@ from ray import tune
 def main():
     # Parsing command line arguments
     parser = argparse.ArgumentParser('SyncTwin training')
-    parser.add_argument('--data', type=str, default='simulation')
+    parser.add_argument('--data', type=str, default='pkpd')
     args = parser.parse_args()
 
     # Initialising environment
@@ -26,8 +26,8 @@ def main():
     ray.init(address=None)
 
     # Load model training dataset
-    N, M, _, R, D, _, C, X, M_, _, Y_post, A, T = joblib.load(
-        os.path.join(os.getcwd(), f'data/{args.data}/data.joblib')
+    N, M, _, R, D, _, _, X, M_, _, Y_post, A, T = joblib.load(
+        os.path.join(os.getcwd(), f'data/{args.data}/data_0.25_200.joblib')
     )
     Y_mask = np.all(A == 0, axis=1)
     Y_control = Y_post[Y_mask]
@@ -68,8 +68,8 @@ def main():
         local_dir=os.path.join(os.getcwd(), 'data'),
         sync_config=sync_config,
         resources_per_trial={
-            "cpu": 8,
-            "gpu": 1,
+            "cpu": 4,
+            "gpu": 0,
         },
         metric='valid_loss',
         mode='min',
@@ -82,7 +82,7 @@ def main():
     )
 
     # Save results
-    analysis.results_df.to_csv(os.path.join(os.getcwd(), 'results/synctwin_hp.csv'))
+    analysis.results_df.to_csv(os.path.join(os.getcwd(), 'results/synctwin_hp_pkpd.csv'))
 
 
 if __name__ == '__main__':

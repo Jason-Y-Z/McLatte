@@ -16,7 +16,7 @@ from ray import tune
 
 def main():
     parser = argparse.ArgumentParser('RNN training')
-    parser.add_argument('--data', type=str, default='simulation')
+    parser.add_argument('--data', type=str, default='pkpd')
     args = parser.parse_args()
 
     wandb.init(project='mclatte-test', entity='jasonyz')
@@ -24,7 +24,7 @@ def main():
     ray.init(address=None)
 
     _, _, _, _, _, _, _, _, _, Y_pre, Y_post, _, _ = joblib.load(
-        os.path.join(os.getcwd(), f'data/{args.data}/data.joblib')
+        os.path.join(os.getcwd(), f'data/{args.data}/data_0.25_200.joblib')
     )
 
     hp_config = {
@@ -49,8 +49,8 @@ def main():
         local_dir=os.path.join(os.getcwd(), 'data'),
         sync_config=sync_config,
         resources_per_trial={
-            "cpu": 8,
-            "gpu": 1,
+            "cpu": 4,
+            "gpu": 0,
         },
         metric='valid_loss',
         mode='min',
@@ -61,7 +61,7 @@ def main():
         verbose=0,
         resume='AUTO',
     )
-    analysis.results_df.to_csv(os.path.join(os.getcwd(), 'results/baseline_rnn_hp.csv'))
+    analysis.results_df.to_csv(os.path.join(os.getcwd(), 'results/baseline_rnn_hp_pkpd.csv'))
 
 
 if __name__ == '__main__':

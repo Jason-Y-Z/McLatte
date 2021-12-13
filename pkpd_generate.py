@@ -64,7 +64,7 @@ for fold in ["test", "val", "train"]:
     treat_Kin_b = treat_Kin_b[:, :treatment_sample]
 
     K_list = [0.18]
-    P0_list = [0.5]
+    P0_list = [0.25]
     R0_list = [0.5]
 
     control_res_arr = generate_data(
