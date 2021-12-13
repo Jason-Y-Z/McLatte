@@ -2,9 +2,9 @@ import os
 import pytest
 from mclatte.dataset import TimeSeriesDataModule
 from mclatte.model import (
-    McLatte, 
-    McLatteSemiSkimmed,
-    McLatteWhole,
+    SkimmedMcLatte, 
+    SemiSkimmedMcLatte,
+    McLatte,
 )
 from mclatte.repr_learn import ENCODERS, DECODERS
 from mclatte.simulation_data import generate_simulation_data, TreatmentRepr
@@ -29,7 +29,7 @@ from pytorch_lightning import Trainer
 )
 @pytest.mark.parametrize('encoder', ('lstm', ))
 @pytest.mark.parametrize('decoder', ('lstm', ))
-def test_mclatte(N, M, H, R, D, K, C, mode, encoder, decoder):
+def test_skimmed_mclatte(N, M, H, R, D, K, C, mode, encoder, decoder):
     X, M_, Y_pre, Y_post, A, T = generate_simulation_data(N, M, H, R, D, K, C, mode)
     data_module = TimeSeriesDataModule(
         X=X,
@@ -40,11 +40,11 @@ def test_mclatte(N, M, H, R, D, K, C, mode, encoder, decoder):
         T=T,
         batch_size=16,
     )
-    mclatte = McLatte(
+    mclatte = SkimmedMcLatte(
         encoder=ENCODERS[encoder](input_dim=D, hidden_dim=C, treatment_dim=K), 
         decoder=DECODERS[decoder](hidden_dim=C, output_dim=D, max_seq_len=R * M), 
         lambda_r=1, 
-        lambda_s=1, 
+        lambda_p=1, 
         lr=1e-2, 
         gamma=0.9, 
         post_trt_seq_len=H, 
@@ -77,7 +77,7 @@ def test_mclatte(N, M, H, R, D, K, C, mode, encoder, decoder):
 )
 @pytest.mark.parametrize('encoder', ('lstm', ))
 @pytest.mark.parametrize('decoder', ('lstm', ))
-def test_mclatte_semi_skimmed(N, M, H, R, D, K, C, mode, encoder, decoder):
+def test_semi_skimmed_mclatte(N, M, H, R, D, K, C, mode, encoder, decoder):
     X, M_, Y_pre, Y_post, A, T = generate_simulation_data(N, M, H, R, D, K, C, mode)
     data_module = TimeSeriesDataModule(
         X=X,
@@ -88,7 +88,7 @@ def test_mclatte_semi_skimmed(N, M, H, R, D, K, C, mode, encoder, decoder):
         T=T,
         batch_size=16,
     )
-    mclatte = McLatteSemiSkimmed(
+    mclatte = SemiSkimmedMcLatte(
         encoder=ENCODERS[encoder](input_dim=D, hidden_dim=C, treatment_dim=K), 
         decoder=DECODERS[decoder](hidden_dim=C, output_dim=D, max_seq_len=R * M), 
         lambda_r=1, 
@@ -127,7 +127,7 @@ def test_mclatte_semi_skimmed(N, M, H, R, D, K, C, mode, encoder, decoder):
 )
 @pytest.mark.parametrize('encoder', ('lstm', ))
 @pytest.mark.parametrize('decoder', ('lstm', ))
-def test_mclatte_whole(N, M, H, R, D, K, C, mode, encoder, decoder):
+def test_mclatte(N, M, H, R, D, K, C, mode, encoder, decoder):
     X, M_, Y_pre, Y_post, A, T = generate_simulation_data(N, M, H, R, D, K, C, mode)
     data_module = TimeSeriesDataModule(
         X=X,
@@ -138,7 +138,7 @@ def test_mclatte_whole(N, M, H, R, D, K, C, mode, encoder, decoder):
         T=T,
         batch_size=16,
     )
-    mclatte = McLatteWhole(
+    mclatte = McLatte(
         encoder=ENCODERS[encoder](input_dim=D, hidden_dim=C, treatment_dim=K), 
         decoder=DECODERS[decoder](hidden_dim=C, output_dim=D, max_seq_len=R * M), 
         lambda_r=1, 

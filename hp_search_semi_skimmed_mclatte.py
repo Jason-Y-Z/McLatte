@@ -1,5 +1,5 @@
 """ 
-Application script for running McLatte Whole model training.
+Application script for running McLatte model training.
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
@@ -10,13 +10,13 @@ import numpy as np
 import os
 import ray
 import wandb
-from mclatte.model import train_mclatte_whole
+from mclatte.model import train_semi_skimmed_mclatte
 from ray import tune
 
 
 def main():
     # Parsing command line arguments
-    parser = argparse.ArgumentParser('McLatte Whole training')
+    parser = argparse.ArgumentParser('McLatte training')
     parser.add_argument('--data', type=str, default='pkpd')
     args = parser.parse_args()
 
@@ -47,7 +47,7 @@ def main():
     # Run hyper-parameter search
     sync_config = tune.SyncConfig()
     mclatte_trainable = tune.with_parameters(
-        train_mclatte_whole,
+        train_semi_skimmed_mclatte,
         X=X,
         M_=M_,
         Y_pre=Y_pre,
@@ -62,11 +62,12 @@ def main():
     )
     analysis = tune.run(
         mclatte_trainable,
-        name='tune_pl_mclatte_whole',
+        name='tune_pl_semi_skimmed_mclatte',
         local_dir=os.path.join(os.getcwd(), 'data'),
         sync_config=sync_config,
         resources_per_trial={
-            'cpu': 4,
+            'cpu': 8,
+            'gpu': 1,
         },
         metric='valid_loss',
         mode='min',
@@ -74,12 +75,12 @@ def main():
         keep_checkpoints_num=5,
         config=hp_config,
         num_samples=20,
-        verbose=0,
+        verbose=1,
         resume='AUTO',
     )
 
     # Save results
-    analysis.results_df.to_csv(os.path.join(os.getcwd(), 'results/mclatte_whole_hp.csv'))
+    analysis.results_df.to_csv(os.path.join(os.getcwd(), 'results/semi_skimmed_mclatte_hp.csv'))
 
 
 if __name__ == '__main__':

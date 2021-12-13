@@ -1,5 +1,5 @@
 """ 
-Application script for running McLatte model training.
+Application script for running McLatte Whole model training.
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
@@ -10,7 +10,7 @@ import numpy as np
 import os
 import ray
 import wandb
-from mclatte.model import train_mclatte_semi_skimmed
+from mclatte.model import train_mclatte
 from ray import tune
 
 
@@ -47,7 +47,7 @@ def main():
     # Run hyper-parameter search
     sync_config = tune.SyncConfig()
     mclatte_trainable = tune.with_parameters(
-        train_mclatte_semi_skimmed,
+        train_mclatte,
         X=X,
         M_=M_,
         Y_pre=Y_pre,
@@ -62,7 +62,7 @@ def main():
     )
     analysis = tune.run(
         mclatte_trainable,
-        name='tune_pl_mclatte_full',
+        name='tune_pl_mclatte',
         local_dir=os.path.join(os.getcwd(), 'data'),
         sync_config=sync_config,
         resources_per_trial={
@@ -74,12 +74,12 @@ def main():
         keep_checkpoints_num=5,
         config=hp_config,
         num_samples=20,
-        verbose=0,
-        resume='ERRORED_ONLY',
+        verbose=1,
+        resume='AUTO',
     )
 
     # Save results
-    analysis.results_df.to_csv(os.path.join(os.getcwd(), 'results/mclatte_full_hp.csv'))
+    analysis.results_df.to_csv(os.path.join(os.getcwd(), 'results/mclatte_hp_pkpd.csv'))
 
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ import numpy as np
 import os
 import ray
 import wandb
-from mclatte.model import train_mclatte
+from mclatte.model import train_skimmed_mclatte
 from ray import tune
 
 
@@ -46,7 +46,7 @@ def main():
     # Run hyper-parameter search
     sync_config = tune.SyncConfig()
     mclatte_trainable = tune.with_parameters(
-        train_mclatte,
+        train_skimmed_mclatte,
         X=X,
         M_=M_,
         Y_pre=Y_pre,
