@@ -44,18 +44,18 @@ class SyncTwin(nn.Module):
 
         self.n_unit = n_unit
         self.n_treated = n_treated
-        self.encoder = encoder.to(device)
-        self.decoder = decoder.to(device)
+        self.encoder = encoder
+        self.decoder = decoder
         if decoder_Y is not None:
             self.decoder_Y = decoder_Y
         if reduce_gpu_memory:
-            init_B = (torch.ones(1, 1, dtype=dtype).to(device)) * 1.0e-4
+            init_B = (torch.ones(1, 1, dtype=dtype, device=device)) * 1.0e-4
         elif inference_only:
-            init_B = (torch.ones(n_treated, n_unit, dtype=dtype).to(device)) * 1.0e-4
+            init_B = (torch.ones(n_treated, n_unit, dtype=dtype, device=device)) * 1.0e-4
         else:
-            init_B = (torch.ones(n_unit + n_treated, n_unit, dtype=dtype).to(device)) * 1.0e-4
-        self.B = nn.Parameter(init_B).to(device)
-        self.C0 = torch.zeros(n_unit, self.encoder.hidden_dim, dtype=dtype, requires_grad=False).to(device)
+            init_B = (torch.ones(n_unit + n_treated, n_unit, dtype=dtype, device=device)) * 1.0e-4
+        self.B = nn.Parameter(init_B)
+        self.C0 = torch.zeros(n_unit, self.encoder.hidden_dim, dtype=dtype, requires_grad=False, device=device)
         # regularization strength of matrix B
         self.reg_B = reg_B
         
@@ -204,6 +204,7 @@ def train_synctwin(
     n_treated: int,
     pre_trt_x_len: int,
     test_run: int = 0,
+    device=DEVICE,
     checkpoint_dir=None,  # kept for compatibility with ray[tune]
 ):
     """
@@ -233,12 +234,13 @@ def train_synctwin(
             tau=config['tau'],
             encoder=enc,
             decoder=dec,
+            device=device,
         )
         pl_model = SyncTwinPl(
             sync_twin=sync_twin, 
             lr=lr, 
             gamma=gamma, 
-            y_control=torch.from_numpy(Y_control).float(),
+            y_control=torch.from_numpy(Y_control).float().to(device),
         )
 
     data_module = SyncTwinDataModule(
