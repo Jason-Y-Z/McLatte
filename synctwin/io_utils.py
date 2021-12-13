@@ -32,17 +32,17 @@ def load_config(data_path, fold="train"):
     return n_units, n_treated, n_units_total, step, train_step, control_sample, noise, n_basis, n_cluster
 
 
-def load_tensor(data_path, fold="train"):
-    x_full = torch.load(data_path.format(fold, "x_full", "pth"))
-    t_full = torch.load(data_path.format(fold, "t_full", "pth"))
-    mask_full = torch.load(data_path.format(fold, "mask_full", "pth"))
-    batch_ind_full = torch.load(data_path.format(fold, "batch_ind_full", "pth"))
-    y_full = torch.load(data_path.format(fold, "y_full", "pth"))
-    y_control = torch.load(data_path.format(fold, "y_control", "pth"))
-    y_mask_full = torch.load(data_path.format(fold, "y_mask_full", "pth"))
-    m = torch.load(data_path.format(fold, "m", "pth"))
-    sd = torch.load(data_path.format(fold, "sd", "pth"))
-    treatment_effect = torch.load(data_path.format(fold, "treatment_effect", "pth"))
+def load_tensor(data_path, fold="train", device="cpu"):
+    x_full = torch.load(data_path.format(fold, "x_full", "pth"), map_location=torch.device(device))
+    t_full = torch.load(data_path.format(fold, "t_full", "pth"), map_location=torch.device(device))
+    mask_full = torch.load(data_path.format(fold, "mask_full", "pth"), map_location=torch.device(device))
+    batch_ind_full = torch.load(data_path.format(fold, "batch_ind_full", "pth"), map_location=torch.device(device))
+    y_full = torch.load(data_path.format(fold, "y_full", "pth"), map_location=torch.device(device))
+    y_control = torch.load(data_path.format(fold, "y_control", "pth"), map_location=torch.device(device))
+    y_mask_full = torch.load(data_path.format(fold, "y_mask_full", "pth"), map_location=torch.device(device))
+    m = torch.load(data_path.format(fold, "m", "pth"), map_location=torch.device(device))
+    sd = torch.load(data_path.format(fold, "sd", "pth"), map_location=torch.device(device))
+    treatment_effect = torch.load(data_path.format(fold, "treatment_effect", "pth"), map_location=torch.device(device))
     return x_full, t_full, mask_full, batch_ind_full, y_full, y_control, y_mask_full, m, sd, treatment_effect
 
 
