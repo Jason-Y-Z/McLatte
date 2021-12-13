@@ -77,7 +77,7 @@ def main():
         keep_checkpoints_num=5,
         config=hp_config,
         num_samples=20,
-        verbose=1,
+        verbose=0,
         resume='AUTO',
     )
 
