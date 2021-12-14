@@ -12,12 +12,12 @@ from typing import Optional
 
 class SyncTwinDataset(Dataset):
     def __init__(
-        self, 
-        X: np.array,
-        M: np.array,
-        T: np.array,
-        Y_batch: np.array,
-        Y_mask: np.array,
+        self,
+        X: np.ndarray,
+        M: np.ndarray,
+        T: np.ndarray,
+        Y_batch: np.ndarray,
+        Y_mask: np.ndarray,
     ) -> None:
         super().__init__()
 
@@ -26,10 +26,10 @@ class SyncTwinDataset(Dataset):
         self._T = T
         self._Y_batch = Y_batch
         self._Y_mask = Y_mask
-    
+
     def __len__(self) -> int:
         return self._X.shape[0]
-    
+
     def __getitem__(self, idx):
         x = torch.from_numpy(self._X[idx] * self._M[idx]).float()  # masked covariates
         t = torch.from_numpy(self._T[idx]).float()  # measurement time
@@ -42,12 +42,12 @@ class SyncTwinDataset(Dataset):
 
 class SyncTwinDataModule(pl.LightningDataModule):
     def __init__(
-        self, 
-        X: np.array,
-        M: np.array,
-        T: np.array,
-        Y_batch: np.array,
-        Y_mask: np.array,
+        self,
+        X: np.ndarray,
+        M: np.ndarray,
+        T: np.ndarray,
+        Y_batch: np.ndarray,
+        Y_mask: np.ndarray,
         batch_size: int,
     ):
         super().__init__()
@@ -58,7 +58,7 @@ class SyncTwinDataModule(pl.LightningDataModule):
         self._Y_batch = Y_batch
         self._Y_mask = Y_mask
         self._batch_size = batch_size
-    
+
     def setup(self, stage: Optional[str] = None) -> None:
         if stage in (None, "fit"):
             # Train-Validation-Test split
@@ -72,14 +72,13 @@ class SyncTwinDataModule(pl.LightningDataModule):
 
             seq_length = len(full_dataset)
             self._train_dataset, self._valid_dataset = random_split(
-                full_dataset, 
-                [round(seq_length * 0.8), round(seq_length * 0.2)]
+                full_dataset, [round(seq_length * 0.8), round(seq_length * 0.2)]
             )
-    
+
     def train_dataloader(self):
         return DataLoader(
-            self._train_dataset, 
-            batch_size=self._batch_size, 
+            self._train_dataset,
+            batch_size=self._batch_size,
             shuffle=True,
             num_workers=16,
             persistent_workers=True,
@@ -87,7 +86,7 @@ class SyncTwinDataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         return DataLoader(
-            self._valid_dataset, 
+            self._valid_dataset,
             batch_size=self._batch_size,
             num_workers=4,
             persistent_workers=True,
@@ -95,7 +94,7 @@ class SyncTwinDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(
-            self._valid_dataset, 
+            self._valid_dataset,
             batch_size=self._batch_size,
             num_workers=4,
             persistent_workers=True,
@@ -103,7 +102,7 @@ class SyncTwinDataModule(pl.LightningDataModule):
 
     def predict_dataloader(self):
         return DataLoader(
-            self._valid_dataset, 
+            self._valid_dataset,
             batch_size=self._batch_size,
             num_workers=4,
             persistent_workers=True,

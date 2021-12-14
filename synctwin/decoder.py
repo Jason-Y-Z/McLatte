@@ -25,7 +25,9 @@ class RegularDecoder(nn.Module):
         out_list = [out]
         # run the remaining iterations
         for t in range(self.max_seq_len - 1):
-            out, hidden = self.lstm(C.unsqueeze(0), hidden)  # pylint: disable=not-callable
+            out, hidden = self.lstm(
+                C.unsqueeze(0), hidden
+            )  # pylint: disable=not-callable
             out = self.lin(out)
             out_list.append(out)
 
@@ -53,7 +55,9 @@ class LSTMTimeDecoder(nn.Module):
         out_list = [out]
         # run the remaining iterations
         for t in range(self.max_seq_len - 1):
-            lstm_in = torch.cat((C.unsqueeze(0), time_encoded[(t + 1) : (t + 2), ...]), dim=-1)
+            lstm_in = torch.cat(
+                (C.unsqueeze(0), time_encoded[(t + 1) : (t + 2), ...]), dim=-1
+            )
             out, hidden = self.lstm(lstm_in, hidden)  # pylint: disable=not-callable
             out = self.lin(out)
             out_list.append(out)

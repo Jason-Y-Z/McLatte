@@ -29,21 +29,64 @@ def load_config(data_path, fold="train"):
     noise = config["noise"]
     n_basis = config["n_basis"]
     n_cluster = config["n_cluster"]
-    return n_units, n_treated, n_units_total, step, train_step, control_sample, noise, n_basis, n_cluster
+    return (
+        n_units,
+        n_treated,
+        n_units_total,
+        step,
+        train_step,
+        control_sample,
+        noise,
+        n_basis,
+        n_cluster,
+    )
 
 
 def load_tensor(data_path, fold="train", device="cpu"):
-    x_full = torch.load(data_path.format(fold, "x_full", "pth"), map_location=torch.device(device))
-    t_full = torch.load(data_path.format(fold, "t_full", "pth"), map_location=torch.device(device))
-    mask_full = torch.load(data_path.format(fold, "mask_full", "pth"), map_location=torch.device(device))
-    batch_ind_full = torch.load(data_path.format(fold, "batch_ind_full", "pth"), map_location=torch.device(device))
-    y_full = torch.load(data_path.format(fold, "y_full", "pth"), map_location=torch.device(device))
-    y_control = torch.load(data_path.format(fold, "y_control", "pth"), map_location=torch.device(device))
-    y_mask_full = torch.load(data_path.format(fold, "y_mask_full", "pth"), map_location=torch.device(device))
-    m = torch.load(data_path.format(fold, "m", "pth"), map_location=torch.device(device))
-    sd = torch.load(data_path.format(fold, "sd", "pth"), map_location=torch.device(device))
-    treatment_effect = torch.load(data_path.format(fold, "treatment_effect", "pth"), map_location=torch.device(device))
-    return x_full, t_full, mask_full, batch_ind_full, y_full, y_control, y_mask_full, m, sd, treatment_effect
+    x_full = torch.load(
+        data_path.format(fold, "x_full", "pth"), map_location=torch.device(device)
+    )
+    t_full = torch.load(
+        data_path.format(fold, "t_full", "pth"), map_location=torch.device(device)
+    )
+    mask_full = torch.load(
+        data_path.format(fold, "mask_full", "pth"), map_location=torch.device(device)
+    )
+    batch_ind_full = torch.load(
+        data_path.format(fold, "batch_ind_full", "pth"),
+        map_location=torch.device(device),
+    )
+    y_full = torch.load(
+        data_path.format(fold, "y_full", "pth"), map_location=torch.device(device)
+    )
+    y_control = torch.load(
+        data_path.format(fold, "y_control", "pth"), map_location=torch.device(device)
+    )
+    y_mask_full = torch.load(
+        data_path.format(fold, "y_mask_full", "pth"), map_location=torch.device(device)
+    )
+    m = torch.load(
+        data_path.format(fold, "m", "pth"), map_location=torch.device(device)
+    )
+    sd = torch.load(
+        data_path.format(fold, "sd", "pth"), map_location=torch.device(device)
+    )
+    treatment_effect = torch.load(
+        data_path.format(fold, "treatment_effect", "pth"),
+        map_location=torch.device(device),
+    )
+    return (
+        x_full,
+        t_full,
+        mask_full,
+        batch_ind_full,
+        y_full,
+        y_control,
+        y_mask_full,
+        m,
+        sd,
+        treatment_effect,
+    )
 
 
 def load_data_dict(version=1):
@@ -121,7 +164,32 @@ def get_tensors(d1_train, d0_train, device):
 
     patid_full = np.concatenate([d0_train[-2], d1_train[-2]], axis=0)
     print(patid_full.shape)
-    x_full, t_full, mask_full, batch_ind_full, y_full, y_control, y_mask_full = to_tensor(
-        device, torch.float32, x_full, t_full, mask_full, batch_ind_full, y_full, y_control, y_mask_full
+    (
+        x_full,
+        t_full,
+        mask_full,
+        batch_ind_full,
+        y_full,
+        y_control,
+        y_mask_full,
+    ) = to_tensor(
+        device,
+        torch.float32,
+        x_full,
+        t_full,
+        mask_full,
+        batch_ind_full,
+        y_full,
+        y_control,
+        y_mask_full,
     )
-    return x_full, t_full, mask_full, batch_ind_full, y_full, y_control, y_mask_full, patid_full
+    return (
+        x_full,
+        t_full,
+        mask_full,
+        batch_ind_full,
+        y_full,
+        y_control,
+        y_mask_full,
+        patid_full,
+    )

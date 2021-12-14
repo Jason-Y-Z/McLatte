@@ -62,4 +62,3 @@ class GRUDEncoder(nn.Module):
         # B, Dh
         C = torch.sum(h * attn_weight.unsqueeze(-1), dim=0)
         return C
-    

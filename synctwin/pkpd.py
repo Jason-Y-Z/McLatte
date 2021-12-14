@@ -92,7 +92,9 @@ def get_clustered_Kin(Kin_b, n_cluster, n_sample_total):
     return Kin_list, Kin_b
 
 
-def generate_data(Kin_list, K_list, P0_list, R0_list, train_step, H=0.1, D50=3, step=30):
+def generate_data(
+    Kin_list, K_list, P0_list, R0_list, train_step, H=0.1, D50=3, step=30
+):
 
     # K_list = [0.18, 0.28, 0.38]
     # K_list = [0.18]
@@ -134,8 +136,12 @@ def get_covariate(
     n_units = control_res_arr.shape[-1] * 2 if double_up else control_res_arr.shape[-1]
     n_treated = treat_res_arr.shape[-1]
 
-    covariates_control = np.concatenate([control_Kin_b[:step, :][None, :, :], control_res_arr], axis=0)
-    covariates_treated = np.concatenate([treat_Kin_b[:step, :][None, :, :], treat_res_arr], axis=0)
+    covariates_control = np.concatenate(
+        [control_Kin_b[:step, :][None, :, :], control_res_arr], axis=0
+    )
+    covariates_treated = np.concatenate(
+        [treat_Kin_b[:step, :][None, :, :], treat_res_arr], axis=0
+    )
     covariates = np.concatenate([covariates_control, covariates_treated], axis=2)
 
     covariates = torch.tensor(covariates, dtype=torch.float32)
@@ -151,7 +157,9 @@ def get_covariate(
 
     if double_up:
         covariates_control = covariates[:, : (covariates.shape[1] // 2), :]
-        covariates_twin = covariates_control + torch.randn_like(covariates_control) * 0.1
+        covariates_twin = (
+            covariates_control + torch.randn_like(covariates_control) * 0.1
+        )
         covariates = torch.cat([covariates_twin, covariates], dim=1)
 
     if noise is not None:
@@ -190,11 +198,15 @@ def get_covariate(
     )
 
 
-def get_treatment_effect(treat_res_arr, treat_counterfactual_arr, train_step, m, sd, device=DEVICE):
+def get_treatment_effect(
+    treat_res_arr, treat_counterfactual_arr, train_step, m, sd, device=DEVICE
+):
     m = m[2:3].item()
     sd = sd[2:3].item()
 
     treat_res_arr = (treat_res_arr - m) / sd
     treat_counterfactual_arr = (treat_counterfactual_arr - m) / sd
 
-    return torch.tensor(treat_res_arr - treat_counterfactual_arr, device=device).permute((1, 2, 0))[train_step:, :, 1:2]
+    return torch.tensor(
+        treat_res_arr - treat_counterfactual_arr, device=device
+    ).permute((1, 2, 0))[train_step:, :, 1:2]

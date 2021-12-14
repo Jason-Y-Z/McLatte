@@ -16,34 +16,34 @@ from ray import tune
 
 def main():
     # Parsing command line arguments
-    parser = argparse.ArgumentParser('SyncTwin training')
-    parser.add_argument('--data', type=str, default='pkpd')
+    parser = argparse.ArgumentParser("SyncTwin training")
+    parser.add_argument("--data", type=str, default="pkpd")
     args = parser.parse_args()
 
     # Initialising environment
-    wandb.init(project='mclatte-test', entity='jasonyz')
+    wandb.init(project="mclatte-test", entity="jasonyz")
     np.random.seed(509)
     ray.init(address=None)
 
     # Load model training dataset
     N, M, _, R, D, _, _, X, M_, _, Y_post, A, T = joblib.load(
-        os.path.join(os.getcwd(), f'data/{args.data}/data_0.25_200.joblib')
+        os.path.join(os.getcwd(), f"data/{args.data}/data_0.25_200.joblib")
     )
     Y_mask = np.all(A == 0, axis=1)
     Y_control = Y_post[Y_mask]
 
     # Initialise hyper-parameter search space
     hp_config = {
-        'hidden_dim': tune.choice([8, 32, 128]),
-        'reg_B': tune.uniform(0, 1),
-        'lam_express': tune.uniform(0, 1),
-        'lam_recon': tune.uniform(0, 1),
-        'lam_prognostic': tune.uniform(0, 1),
-        'tau': tune.uniform(0, 1),
-        'batch_size': tune.choice([32]),
-        'epochs': tune.choice([100]),
-        'lr': tune.loguniform(1e-4, 1e-1),
-        'gamma': tune.uniform(0.5, 0.99),
+        "hidden_dim": tune.choice([8, 32, 128]),
+        "reg_B": tune.uniform(0, 1),
+        "lam_express": tune.uniform(0, 1),
+        "lam_recon": tune.uniform(0, 1),
+        "lam_prognostic": tune.uniform(0, 1),
+        "tau": tune.uniform(0, 1),
+        "batch_size": tune.choice([32]),
+        "epochs": tune.choice([100]),
+        "lr": tune.loguniform(1e-4, 1e-1),
+        "gamma": tune.uniform(0.5, 0.99),
     }
     sync_config = tune.SyncConfig()
 
@@ -56,7 +56,7 @@ def main():
         T=T,
         Y_batch=Y_post,
         Y_control=Y_control,
-        Y_mask=Y_mask, 
+        Y_mask=Y_mask,
         N=N,
         D=D,
         n_treated=N - Y_control.shape[0],
@@ -64,26 +64,28 @@ def main():
     )
     analysis = tune.run(
         st_trainable,
-        name='tune_pl_sync_twin',
-        local_dir=os.path.join(os.getcwd(), 'data'),
+        name="tune_pl_sync_twin",
+        local_dir=os.path.join(os.getcwd(), "data"),
         sync_config=sync_config,
         resources_per_trial={
             "cpu": 4,
             "gpu": 0,
         },
-        metric='valid_loss',
-        mode='min',
-        checkpoint_score_attr='valid_loss',
+        metric="valid_loss",
+        mode="min",
+        checkpoint_score_attr="valid_loss",
         keep_checkpoints_num=5,
         config=hp_config,
         num_samples=20,
         verbose=0,
-        resume='AUTO',
+        resume="AUTO",
     )
 
     # Save results
-    analysis.results_df.to_csv(os.path.join(os.getcwd(), 'results/synctwin_hp_pkpd.csv'))
+    analysis.results_df.to_csv(
+        os.path.join(os.getcwd(), "results/synctwin_hp_pkpd.csv")
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

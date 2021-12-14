@@ -15,7 +15,9 @@ from torch.nn.parameter import Parameter
 
 
 class FilterLinear(nn.Module):
-    def __init__(self, in_features, out_features, filter_square_matrix, bias=True, device=DEVICE):
+    def __init__(
+        self, in_features, out_features, filter_square_matrix, bias=True, device=DEVICE
+    ):
         """
         filter_square_matrix : filter square matrix, whose each elements is 0 or 1.
         """
@@ -24,7 +26,9 @@ class FilterLinear(nn.Module):
         self.out_features = out_features
 
         self.filter_square_matrix = None
-        self.filter_square_matrix = Variable(filter_square_matrix, requires_grad=False).to(device)
+        self.filter_square_matrix = Variable(
+            filter_square_matrix, requires_grad=False
+        ).to(device)
         self.weight = Parameter(torch.Tensor(out_features, in_features).to(device))
         if bias:
             self.bias = Parameter(torch.Tensor(out_features).to(device))
@@ -89,11 +93,19 @@ class GRUD(nn.Module):
         self.zeros = Variable(torch.zeros(input_size).to(device))
         self.zeros_hidden = Variable(torch.zeros(hidden_size).to(device))
 
-        self.zl = nn.Linear(input_size + hidden_size + self.mask_size, hidden_size).to(device)
-        self.rl = nn.Linear(input_size + hidden_size + self.mask_size, hidden_size).to(device)
-        self.hl = nn.Linear(input_size + hidden_size + self.mask_size, hidden_size).to(device)
+        self.zl = nn.Linear(input_size + hidden_size + self.mask_size, hidden_size).to(
+            device
+        )
+        self.rl = nn.Linear(input_size + hidden_size + self.mask_size, hidden_size).to(
+            device
+        )
+        self.hl = nn.Linear(input_size + hidden_size + self.mask_size, hidden_size).to(
+            device
+        )
 
-        self.gamma_x_l = FilterLinear(self.delta_size, self.delta_size, self.identity, bias=True, device=device)
+        self.gamma_x_l = FilterLinear(
+            self.delta_size, self.delta_size, self.identity, bias=True, device=device
+        )
 
         self.gamma_h_l = nn.Linear(self.delta_size, self.hidden_size).to(device)
 
@@ -105,7 +117,9 @@ class GRUD(nn.Module):
         dim_size = x.shape[1]
 
         delta_x = torch.exp(-torch.max(self.zeros, self.gamma_x_l(delta)))
-        delta_h = torch.exp(-torch.max(self.zeros_hidden, self.gamma_h_l(delta)))  # pylint: disable=not-callable
+        delta_h = torch.exp(
+            -torch.max(self.zeros_hidden, self.gamma_h_l(delta))
+        )  # pylint: disable=not-callable
 
         # print('mask', mask.shape)
         # print('x', x.shape)
@@ -158,7 +172,9 @@ class GRUD(nn.Module):
             return outputs
 
     def initHidden(self, batch_size):
-        Hidden_State = Variable(torch.zeros(batch_size, self.hidden_size).to(self.device))
+        Hidden_State = Variable(
+            torch.zeros(batch_size, self.hidden_size).to(self.device)
+        )
         return Hidden_State
 
     def get_input_for_grud(self, t, y, y_mask):
@@ -173,7 +189,13 @@ class GRUD(nn.Module):
 
         for i in range(1, t_delta_mat.shape[0]):
             last_mask = y_mask[i - 1, ...].to(last_y_mat)
-            last_y_mat[i, ...] = last_y_mat[i, ...] + last_y_mat[i - 1, ...] * (1 - last_mask)
+            last_y_mat[i, ...] = last_y_mat[i, ...] + last_y_mat[i - 1, ...] * (
+                1 - last_mask
+            )
 
-        gru_d_input = torch.cat((y, last_y_mat, y_mask.to(y), t_delta_mat), dim=2).permute((1, 2, 0, 3)).to(self.device)
+        gru_d_input = (
+            torch.cat((y, last_y_mat, y_mask.to(y), t_delta_mat), dim=2)
+            .permute((1, 2, 0, 3))
+            .to(self.device)
+        )
         return gru_d_input

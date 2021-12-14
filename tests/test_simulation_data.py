@@ -1,7 +1,7 @@
 import pytest
 from mclatte.simulation_data import (
     generate_simulation_data,
-    simulate_covariates, 
+    simulate_covariates,
     simulate_masking_vectors,
     simulate_outcomes,
     simulate_treatment_vectors,
@@ -10,10 +10,10 @@ from mclatte.simulation_data import (
 
 
 # Given
-@pytest.mark.parametrize('N', (50, 100))
-@pytest.mark.parametrize('L', (5, 10))
-@pytest.mark.parametrize('P', (5, 10))
-@pytest.mark.parametrize('T', (50, 100))
+@pytest.mark.parametrize("N", (50, 100))
+@pytest.mark.parametrize("L", (5, 10))
+@pytest.mark.parametrize("P", (5, 10))
+@pytest.mark.parametrize("T", (50, 100))
 def test_simulate_covariates(N, L, P, T):
     # When
     X = simulate_covariates(N, L, P, T)
@@ -23,9 +23,9 @@ def test_simulate_covariates(N, L, P, T):
 
 
 # Given
-@pytest.mark.parametrize('N', (50, 100))
-@pytest.mark.parametrize('D', (10, 20))
-@pytest.mark.parametrize('T', (50, 100))
+@pytest.mark.parametrize("N", (50, 100))
+@pytest.mark.parametrize("D", (10, 20))
+@pytest.mark.parametrize("T", (50, 100))
 def test_simulate_masking_vectors(N, D, T):
     # When
     M = simulate_masking_vectors(N, D, T)
@@ -36,15 +36,10 @@ def test_simulate_masking_vectors(N, D, T):
 
 
 # Given
-@pytest.mark.parametrize('N', (50, 100))
-@pytest.mark.parametrize('K', (10, 20))
+@pytest.mark.parametrize("N", (50, 100))
+@pytest.mark.parametrize("K", (10, 20))
 @pytest.mark.parametrize(
-    'mode', 
-    (
-        TreatmentRepr.BINARY, 
-        TreatmentRepr.BOUNDED, 
-        TreatmentRepr.REAL_VALUED
-    )
+    "mode", (TreatmentRepr.BINARY, TreatmentRepr.BOUNDED, TreatmentRepr.REAL_VALUED)
 )
 def test_simulate_treatment_vectors(N, K, mode):
     # When
@@ -54,23 +49,17 @@ def test_simulate_treatment_vectors(N, K, mode):
     assert A.shape == (N, K)
 
 
-
 # Given
-@pytest.mark.parametrize('N', (5, 10))
-@pytest.mark.parametrize('M', (5, 10))
-@pytest.mark.parametrize('H', (5, 10))
-@pytest.mark.parametrize('L', (5, 10))
-@pytest.mark.parametrize('P', (5, 10))
-@pytest.mark.parametrize('R', (5, 10))
-@pytest.mark.parametrize('K', (10, 20))
-@pytest.mark.parametrize('C', (5, 10))
+@pytest.mark.parametrize("N", (5, 10))
+@pytest.mark.parametrize("M", (5, 10))
+@pytest.mark.parametrize("H", (5, 10))
+@pytest.mark.parametrize("L", (5, 10))
+@pytest.mark.parametrize("P", (5, 10))
+@pytest.mark.parametrize("R", (5, 10))
+@pytest.mark.parametrize("K", (10, 20))
+@pytest.mark.parametrize("C", (5, 10))
 @pytest.mark.parametrize(
-    'mode', 
-    (
-        TreatmentRepr.BINARY, 
-        TreatmentRepr.BOUNDED, 
-        TreatmentRepr.REAL_VALUED
-    )
+    "mode", (TreatmentRepr.BINARY, TreatmentRepr.BOUNDED, TreatmentRepr.REAL_VALUED)
 )
 def test_simulate_outcomes(N, M, H, L, P, R, K, C, mode):
     D = L + P
@@ -87,20 +76,15 @@ def test_simulate_outcomes(N, M, H, L, P, R, K, C, mode):
 
 
 # Given
-@pytest.mark.parametrize('N', (5, 10))
-@pytest.mark.parametrize('M', (5, 10))
-@pytest.mark.parametrize('H', (5, 10))
-@pytest.mark.parametrize('R', (5, 10))
-@pytest.mark.parametrize('D', (10, 20))
-@pytest.mark.parametrize('K', (5, 10))
-@pytest.mark.parametrize('C', (5, 10))
+@pytest.mark.parametrize("N", (5, 10))
+@pytest.mark.parametrize("M", (5, 10))
+@pytest.mark.parametrize("H", (5, 10))
+@pytest.mark.parametrize("R", (5, 10))
+@pytest.mark.parametrize("D", (10, 20))
+@pytest.mark.parametrize("K", (5, 10))
+@pytest.mark.parametrize("C", (5, 10))
 @pytest.mark.parametrize(
-    'mode', 
-    (
-        TreatmentRepr.BINARY, 
-        TreatmentRepr.BOUNDED, 
-        TreatmentRepr.REAL_VALUED
-    )
+    "mode", (TreatmentRepr.BINARY, TreatmentRepr.BOUNDED, TreatmentRepr.REAL_VALUED)
 )
 def test_generate_simulation_data(N, M, H, R, D, K, C, mode):
     # When
