@@ -12,11 +12,11 @@ import numpy.random
 import torch
 from synctwin._config import DEVICE
 from synctwin.pkpd import (
-    get_Kin, 
-    get_clustered_Kin, 
+    get_Kin,
+    get_clustered_Kin,
     get_covariate,
     get_treatment_effect,
-    generate_data, 
+    generate_data,
 )
 from synctwin.io_utils import create_paths
 
@@ -30,7 +30,9 @@ parser.add_argument("--step", type=str, default="30")
 parser.add_argument("--control_sample", type=str, default="200")
 parser.add_argument("--treatment_sample", type=str, default="200")
 parser.add_argument("--save_data", type=str, choices=["False", "True"], default="True")
-parser.add_argument("--hidden_confounder", type=str, choices=["0", "1", "2", "3"], default="0")
+parser.add_argument(
+    "--hidden_confounder", type=str, choices=["0", "1", "2", "3"], default="0"
+)
 args = parser.parse_args()
 seed = int(args.seed)
 save_data = args.save_data == "True"
@@ -58,8 +60,12 @@ data_path = base_path_data + "/{}-{}.{}"
 
 for fold in ["test", "val", "train"]:
     Kin_list, Kin_b = get_Kin(step=step, n_basis=n_basis)
-    control_Kin_list, control_Kin_b = get_clustered_Kin(Kin_b, n_cluster=n_cluster, n_sample_total=control_sample)
-    treat_Kin_list, treat_Kin_b = get_clustered_Kin(Kin_b, n_cluster=n_cluster, n_sample_total=control_sample * 2)
+    control_Kin_list, control_Kin_b = get_clustered_Kin(
+        Kin_b, n_cluster=n_cluster, n_sample_total=control_sample
+    )
+    treat_Kin_list, treat_Kin_b = get_clustered_Kin(
+        Kin_b, n_cluster=n_cluster, n_sample_total=control_sample * 2
+    )
     treat_Kin_list = treat_Kin_list[:treatment_sample]
     treat_Kin_b = treat_Kin_b[:, :treatment_sample]
 
@@ -68,13 +74,34 @@ for fold in ["test", "val", "train"]:
     R0_list = [0.5]
 
     control_res_arr = generate_data(
-        control_Kin_list, K_list, P0_list, R0_list, train_step=-1, H=0.1, D50=0.1, step=step
+        control_Kin_list,
+        K_list,
+        P0_list,
+        R0_list,
+        train_step=-1,
+        H=0.1,
+        D50=0.1,
+        step=step,
     )
     treat_res_arr = generate_data(
-        treat_Kin_list, K_list, P0_list, R0_list, train_step=train_step, H=0.1, D50=0.1, step=step
+        treat_Kin_list,
+        K_list,
+        P0_list,
+        R0_list,
+        train_step=train_step,
+        H=0.1,
+        D50=0.1,
+        step=step,
     )
     treat_counterfactual_arr = generate_data(
-        treat_Kin_list, K_list, P0_list, R0_list, train_step=-1, H=0.1, D50=0.1, step=step
+        treat_Kin_list,
+        K_list,
+        P0_list,
+        R0_list,
+        train_step=-1,
+        H=0.1,
+        D50=0.1,
+        step=step,
     )
 
     (
@@ -102,7 +129,9 @@ for fold in ["test", "val", "train"]:
         hidden_confounder=hidden_confounder,
     )
 
-    treatment_effect = get_treatment_effect(treat_res_arr, treat_counterfactual_arr, train_step, m, sd)
+    treatment_effect = get_treatment_effect(
+        treat_res_arr, treat_counterfactual_arr, train_step, m, sd
+    )
 
     n_units, n_treated, n_units_total = n_tuple
     print(n_tuple)
@@ -111,10 +140,20 @@ for fold in ["test", "val", "train"]:
     if save_data:
 
         X0 = x_full[:, :n_units, :]
-        X0 = X0.permute((0, 2, 1)).reshape(X0.shape[0] * X0.shape[2], X0.shape[1]).cpu().numpy()
+        X0 = (
+            X0.permute((0, 2, 1))
+            .reshape(X0.shape[0] * X0.shape[2], X0.shape[1])
+            .cpu()
+            .numpy()
+        )
 
         X1 = x_full[:, n_units:, :]
-        X1 = X1.permute((0, 2, 1)).reshape(X1.shape[0] * X1.shape[2], X1.shape[1]).cpu().numpy()
+        X1 = (
+            X1.permute((0, 2, 1))
+            .reshape(X1.shape[0] * X1.shape[2], X1.shape[1])
+            .cpu()
+            .numpy()
+        )
 
         Y_control = y_control[:, :, 0].cpu().numpy()
         Y_treated = y_full[:, n_units:, 0].cpu().numpy()
@@ -124,7 +163,11 @@ for fold in ["test", "val", "train"]:
         np.savetxt(data_path.format(fold, "X1", "csv"), X1, delimiter=",")
         np.savetxt(data_path.format(fold, "Y_control", "csv"), Y_control, delimiter=",")
         np.savetxt(data_path.format(fold, "Y_treated", "csv"), Y_treated, delimiter=",")
-        np.savetxt(data_path.format(fold, "Treatment_effect", "csv"), Treatment_effect, delimiter=",")
+        np.savetxt(
+            data_path.format(fold, "Treatment_effect", "csv"),
+            Treatment_effect,
+            delimiter=",",
+        )
 
         torch.save(x_full, data_path.format(fold, "x_full", "pth"))
         torch.save(t_full, data_path.format(fold, "t_full", "pth"))
