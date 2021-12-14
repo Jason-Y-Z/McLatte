@@ -91,52 +91,50 @@ def train_baseline_rnn(
     if test_run > 0:
         # Try loading from checkpoint
         try:
-            pl_model = BaselineRnn.load_from_checkpoint(os.path.join(os.getcwd(), f'results/rnn_{test_run}.ckpt'))
+            return BaselineRnn.load_from_checkpoint(os.path.join(os.getcwd(), f'results/rnn_{test_run}.ckpt'))
         except Exception as e:
             print(e)
-            pl_model = None
-    
-    if test_run <= 0 or pl_model is None: 
-        rnn = RNNS[config['rnn_class']](
-            input_size=input_dim,
-            hidden_size=config['hidden_dim'],
-        )
-        pl_model = BaselineRnn(
-            rnn=rnn,
-            hidden_dim=config['hidden_dim'],
-            output_dim=1,
-            lr=lr, 
-            gamma=gamma, 
-        )
-    
+            
+    rnn = RNNS[config['rnn_class']](
+        input_size=input_dim,
+        hidden_size=config['hidden_dim'],
+    )
+    pl_model = BaselineRnn(
+        rnn=rnn,
+        hidden_dim=config['hidden_dim'],
+        output_dim=1,
+        lr=lr, 
+        gamma=gamma, 
+    )
+
     data_module = ShiftingDataModule(
         Y=Y,
         seq_len=config['seq_len'],
         batch_size=config['batch_size'], 
     )
     metrics = {'loss': 'ptl/loss', 'valid_loss': 'ptl/valid_loss'}
-    callbacks = [
-        TuneReportCallback(metrics, on='validation_end'), 
-        EarlyStopping(monitor='ptl/valid_loss'),
-    ]
+    callbacks = [TuneReportCallback(metrics, on='validation_end')] if test_run == 0 else []
+    callbacks.append(EarlyStopping(monitor='ptl/valid_loss'))
+    logger = False if test_run > 0 else WandbLogger(
+        project='mclatte-test', 
+        log_model=True, 
+        name='|'.join([
+            f'{k} = {v:.3}' 
+            if isinstance(v, float) 
+            else f'{k} = {v}'
+            for k, v in config.items()
+        ])
+    )
 
     # Run
     trainer = Trainer(
         default_root_dir=os.path.join(os.getcwd(), 'data'),
         max_epochs=epochs,
-        gpus=1,
-        logger=WandbLogger(
-            project='mclatte-test', 
-            log_model=True, 
-            name='|'.join([
-                f'{k} = {v:.3}' 
-                if isinstance(v, float) 
-                else f'{k} = {v}'
-                for k, v in config.items()
-            ])
-        ),
+        logger=logger,
         callbacks=callbacks,
         progress_bar_refresh_rate=0,
+        devices=4,
+        accelerator='auto',
     )
     
     trainer.fit(pl_model, data_module)

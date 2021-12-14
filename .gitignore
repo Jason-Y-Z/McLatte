@@ -7,6 +7,8 @@ __pycache__/
 *.so
 
 # Data files
+data/checkpoints/
+data/test/
 data/tune_*
 data/diabetes/
 data/mclatte-test/
@@ -39,8 +41,8 @@ documents/
 
 # Results/
 results/
-results_idt/*ckpt
-results_pkpd/*ckpt
+results_idt/*.ckpt
+results_pkpd/*.ckpt
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

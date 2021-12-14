@@ -44,8 +44,8 @@ class SyncTwin(nn.Module):
 
         self.n_unit = n_unit
         self.n_treated = n_treated
-        self.encoder = encoder
-        self.decoder = decoder
+        self.encoder = encoder.to(device)
+        self.decoder = decoder.to(device)
         if decoder_Y is not None:
             self.decoder_Y = decoder_Y
         if reduce_gpu_memory:
@@ -205,6 +205,7 @@ def train_synctwin(
     pre_trt_x_len: int,
     test_run: int = 0,
     device=DEVICE,
+    ckpt_path=None,
     checkpoint_dir=None,  # kept for compatibility with ray[tune]
 ):
     """
@@ -212,36 +213,38 @@ def train_synctwin(
     """
     # Parse the configuration for current run
     epochs, lr, gamma = config['epochs'], config['lr'], config['gamma']
+    ckpt_path = (
+        ckpt_path if ckpt_path is not None 
+        else os.path.join(os.getcwd(), f'results/synctwin_{test_run}.ckpt')
+    )
 
     if test_run > 0:
         # Try loading from checkpoint
         try:
-            pl_model = SyncTwinPl.load_from_checkpoint(os.path.join(os.getcwd(), f'results/synctwin_{test_run}.ckpt'))
+            return SyncTwinPl.load_from_checkpoint(ckpt_path)
         except Exception as e:
             print(e)
-            pl_model = None
 
-    if test_run <= 0 or pl_model is None:    
-        enc = RegularEncoder(input_dim=D, hidden_dim=config['hidden_dim'])
-        dec = RegularDecoder(hidden_dim=enc.hidden_dim, output_dim=enc.input_dim, max_seq_len=pre_trt_x_len)
-        sync_twin = SyncTwin(
-            n_unit=N - n_treated,
-            n_treated=n_treated,
-            reg_B=config['reg_B'],
-            lam_express=config['lam_express'],
-            lam_recon=config['lam_recon'],
-            lam_prognostic=config['lam_prognostic'],
-            tau=config['tau'],
-            encoder=enc,
-            decoder=dec,
-            device=device,
-        )
-        pl_model = SyncTwinPl(
-            sync_twin=sync_twin, 
-            lr=lr, 
-            gamma=gamma, 
-            y_control=torch.from_numpy(Y_control).float().to(device),
-        )
+    enc = RegularEncoder(input_dim=D, hidden_dim=config['hidden_dim'])
+    dec = RegularDecoder(hidden_dim=enc.hidden_dim, output_dim=enc.input_dim, max_seq_len=pre_trt_x_len)
+    sync_twin = SyncTwin(
+        n_unit=N - n_treated,
+        n_treated=n_treated,
+        reg_B=config['reg_B'],
+        lam_express=config['lam_express'],
+        lam_recon=config['lam_recon'],
+        lam_prognostic=config['lam_prognostic'],
+        tau=config['tau'],
+        encoder=enc,
+        decoder=dec,
+        device=device,
+    )
+    pl_model = SyncTwinPl(
+        sync_twin=sync_twin, 
+        lr=lr, 
+        gamma=gamma, 
+        y_control=torch.from_numpy(Y_control).float().to(device),
+    )
 
     data_module = SyncTwinDataModule(
         X=X,
@@ -252,31 +255,31 @@ def train_synctwin(
         batch_size=config['batch_size'], 
     )
     metrics = {'loss': 'ptl/loss', 'valid_loss': 'ptl/valid_loss'}
-    callbacks = [
-        TuneReportCallback(metrics, on='validation_end'), 
-        EarlyStopping(monitor='ptl/valid_loss'),
-    ]
+    callbacks = [TuneReportCallback(metrics, on='validation_end')] if test_run == 0 else []
+    callbacks.append(EarlyStopping(monitor='ptl/valid_loss'))
+    logger = False if test_run > 0 else WandbLogger(
+        project='mclatte-test', 
+        log_model=True, 
+        name='|'.join([
+            f'{k} = {v:.3}' 
+            if isinstance(v, float) 
+            else f'{k} = {v}'
+            for k, v in config.items()
+        ])
+    )
 
     # Run
     trainer = Trainer(
         default_root_dir=os.path.join(os.getcwd(), 'data'),
         max_epochs=epochs,
-        gpus=1,
-        logger=WandbLogger(
-            project='mclatte-test', 
-            log_model=True, 
-            name='|'.join([
-                f'{k} = {v:.3}' 
-                if isinstance(v, float) 
-                else f'{k} = {v}'
-                for k, v in config.items()
-            ])
-        ),
+        logger=logger,
         callbacks=callbacks,
         progress_bar_refresh_rate=0,
+        devices=4,
+        accelerator='auto',
     )
     trainer.fit(pl_model, data_module)
     if test_run > 0:
-        trainer.save_checkpoint(os.path.join(os.getcwd(), f'results/synctwin_{test_run}.ckpt'))
+        trainer.save_checkpoint(ckpt_path)
 
     return pl_model
