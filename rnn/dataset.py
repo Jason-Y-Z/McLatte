@@ -71,6 +71,7 @@ class ShiftingDataModule(pl.LightningDataModule):
             batch_size=self._batch_size, 
             shuffle=True,
             num_workers=16,
+            persistent_workers=True,
         )
 
     def val_dataloader(self):
@@ -78,6 +79,7 @@ class ShiftingDataModule(pl.LightningDataModule):
             self._valid_dataset, 
             batch_size=self._batch_size,
             num_workers=4,
+            persistent_workers=True,
         )
 
     def test_dataloader(self):
@@ -85,6 +87,7 @@ class ShiftingDataModule(pl.LightningDataModule):
             self._valid_dataset, 
             batch_size=self._batch_size,
             num_workers=4,
+            persistent_workers=True,
         )
 
     def predict_dataloader(self):
@@ -92,4 +95,5 @@ class ShiftingDataModule(pl.LightningDataModule):
             self._valid_dataset, 
             batch_size=self._batch_size,
             num_workers=4,
+            persistent_workers=True,
         )
