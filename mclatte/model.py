@@ -208,30 +208,18 @@ def train_mcespresso(
     """
     # Parse the configuration for current run
     epochs = config['epochs']
-
-    if test_run > 0:
-        # Try loading from checkpoint
-        try:
-            pl_model = SkimmedMcLatte.load_from_checkpoint(ckpt_path)
-        except Exception as e:
-            print(e)
-            pl_model = None
-
-    if test_run <= 0 or pl_model is None: 
-        encoder = ENCODERS[config['encoder_class']](
-            input_dim=input_dim,
-            hidden_dim=config['hidden_dim'],
-            treatment_dim=treatment_dim,
-        )
-        decoder = DECODERS[config['decoder_class']](
-            hidden_dim=config['hidden_dim'], 
-            output_dim=input_dim, 
-            max_seq_len=R * M,
-        )
-        pl_model = make_pl_model(
-            encoder=encoder, 
-            decoder=decoder, 
-        )
+    
+    encoder = ENCODERS[config['encoder_class']](
+        input_dim=input_dim,
+        hidden_dim=config['hidden_dim'],
+        treatment_dim=treatment_dim,
+    )
+    decoder = DECODERS[config['decoder_class']](
+        hidden_dim=config['hidden_dim'], 
+        output_dim=input_dim, 
+        max_seq_len=R * M,
+    )
+    pl_model = make_pl_model(encoder, decoder)
 
     data_module = TimeSeriesDataModule(
         X=X,
@@ -295,13 +283,21 @@ def train_skimmed_mclatte(
     """
     # Parse the configuration for current run
     lr, gamma = config['lr'], config['gamma']
+    ckpt_path = os.path.join(os.getcwd(), f'results/skimmed_mclatte_{test_run}_idt.ckpt')
 
     def make_skimmed_mclatte(encoder, decoder):
+        if test_run > 0:
+            # Try loading from checkpoint
+            try:
+                return SkimmedMcLatte.load_from_checkpoint(ckpt_path)
+            except Exception as e:
+                print(e)
+            
         return SkimmedMcLatte(
             encoder=encoder, 
             decoder=decoder, 
             lambda_r=config['lambda_r'], 
-            lambda_p=config['lambda_s'], 
+            lambda_p=config['lambda_p'], 
             lr=lr, 
             gamma=gamma, 
             post_trt_seq_len=H, 
@@ -320,7 +316,7 @@ def train_skimmed_mclatte(
         M,
         input_dim, 
         treatment_dim, 
-        os.path.join(os.getcwd(), f'results/skimmed_mclatte_{test_run}.ckpt'),
+        ckpt_path,
         make_skimmed_mclatte,
         test_run,
     )
@@ -347,8 +343,16 @@ def train_semi_skimmed_mclatte(
     """
     # Parse the configuration for current run
     lr, gamma = config['lr'], config['gamma']
+    ckpt_path = os.path.join(os.getcwd(), f'results/semi_skimmed_mclatte_{test_run}_idt.ckpt')
 
     def make_semi_skimmed_mclatte(encoder, decoder):
+        if test_run > 0:
+            # Try loading from checkpoint
+            try:
+                return SemiSkimmedMcLatte.load_from_checkpoint(ckpt_path)
+            except Exception as e:
+                print(e)
+            
         return SemiSkimmedMcLatte(
             encoder=encoder, 
             decoder=decoder, 
@@ -374,7 +378,7 @@ def train_semi_skimmed_mclatte(
         M,
         input_dim, 
         treatment_dim, 
-        os.path.join(os.getcwd(), f'results/semi_skimmed_mclatte_{test_run}_pkpd.ckpt'),
+        os.path.join(os.getcwd(), f'results/semi_skimmed_mclatte_{test_run}_idt.ckpt'),
         make_semi_skimmed_mclatte,
         test_run,
     )
@@ -401,8 +405,16 @@ def train_mclatte(
     """
     # Parse the configuration for current run
     lr, gamma = config['lr'], config['gamma']
+    ckpt_path = os.path.join(os.getcwd(), f'results/mclatte_{test_run}_idt.ckpt')
 
     def make_mclatte(encoder, decoder):
+        if test_run > 0:
+            # Try loading from checkpoint
+            try:
+                return McLatte.load_from_checkpoint(ckpt_path)
+            except Exception as e:
+                print(e)
+            
         return McLatte(
             encoder=encoder, 
             decoder=decoder, 
@@ -415,7 +427,7 @@ def train_mclatte(
             post_trt_seq_len=H, 
             hidden_dim=config['hidden_dim']
         )
-    
+
     return train_mcespresso(
         config,
         X,
@@ -428,7 +440,7 @@ def train_mclatte(
         M,
         input_dim, 
         treatment_dim, 
-        os.path.join(os.getcwd(), f'results/mclatte_{test_run}_pkpd.ckpt'),
+        os.path.join(os.getcwd(), f'results/mclatte_{test_run}_idt.ckpt'),
         make_mclatte,
         test_run,
     )
