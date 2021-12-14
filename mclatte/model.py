@@ -265,6 +265,7 @@ def train_mcespresso(
         ),
         callbacks=callbacks,
         progress_bar_refresh_rate=0,
+        gpus=1,
     )
     
     trainer.fit(pl_model, data_module)

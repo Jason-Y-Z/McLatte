@@ -39,8 +39,8 @@ documents/
 
 # Results/
 results/
-results_idt/*ckpt
-results_pkpd/*ckpt
+results_idt/*.ckpt
+results_pkpd/*.ckpt
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
