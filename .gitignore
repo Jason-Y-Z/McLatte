@@ -7,6 +7,7 @@ __pycache__/
 *.so
 
 # Data files
+data/test
 data/tune_*
 data/diabetes/
 data/mclatte-test/

@@ -232,10 +232,8 @@ def train_mcespresso(
     )
     
     metrics = {'loss': 'ptl/loss', 'valid_loss': 'ptl/valid_loss'}
-    callbacks = [
-        TuneReportCallback(metrics, on='validation_end'), 
-        EarlyStopping(monitor='ptl/valid_loss'),
-    ]
+    callbacks = [TuneReportCallback(metrics, on='validation_end')] if test_run == 0 else []
+    callbacks.append(EarlyStopping(monitor='ptl/valid_loss'))
 
     # Run
     trainer = Trainer(
@@ -283,16 +281,15 @@ def train_skimmed_mclatte(
     """
     # Parse the configuration for current run
     lr, gamma = config['lr'], config['gamma']
-    ckpt_path = os.path.join(os.getcwd(), f'results/skimmed_mclatte_{test_run}_idt.ckpt')
+    ckpt_path = os.path.join(os.getcwd(), f'results/skimmed_mclatte_{test_run}.ckpt')
+    if test_run > 0:
+        # Try loading from checkpoint
+        try:
+            return SkimmedMcLatte.load_from_checkpoint(ckpt_path)
+        except Exception as e:
+            print(e)
 
     def make_skimmed_mclatte(encoder, decoder):
-        if test_run > 0:
-            # Try loading from checkpoint
-            try:
-                return SkimmedMcLatte.load_from_checkpoint(ckpt_path)
-            except Exception as e:
-                print(e)
-            
         return SkimmedMcLatte(
             encoder=encoder, 
             decoder=decoder, 
@@ -343,16 +340,15 @@ def train_semi_skimmed_mclatte(
     """
     # Parse the configuration for current run
     lr, gamma = config['lr'], config['gamma']
-    ckpt_path = os.path.join(os.getcwd(), f'results/semi_skimmed_mclatte_{test_run}_idt.ckpt')
+    ckpt_path = os.path.join(os.getcwd(), f'results/semi_skimmed_mclatte_{test_run}.ckpt')
+    if test_run > 0:
+        # Try loading from checkpoint
+        try:
+            return SemiSkimmedMcLatte.load_from_checkpoint(ckpt_path)
+        except Exception as e:
+            print(e)
 
     def make_semi_skimmed_mclatte(encoder, decoder):
-        if test_run > 0:
-            # Try loading from checkpoint
-            try:
-                return SemiSkimmedMcLatte.load_from_checkpoint(ckpt_path)
-            except Exception as e:
-                print(e)
-            
         return SemiSkimmedMcLatte(
             encoder=encoder, 
             decoder=decoder, 
@@ -378,7 +374,7 @@ def train_semi_skimmed_mclatte(
         M,
         input_dim, 
         treatment_dim, 
-        os.path.join(os.getcwd(), f'results/semi_skimmed_mclatte_{test_run}_idt.ckpt'),
+        ckpt_path,
         make_semi_skimmed_mclatte,
         test_run,
     )
@@ -405,16 +401,15 @@ def train_mclatte(
     """
     # Parse the configuration for current run
     lr, gamma = config['lr'], config['gamma']
-    ckpt_path = os.path.join(os.getcwd(), f'results/mclatte_{test_run}_idt.ckpt')
+    ckpt_path = os.path.join(os.getcwd(), f'results/mclatte_{test_run}.ckpt')
+    if test_run > 0:
+        # Try loading from checkpoint
+        try:
+            return McLatte.load_from_checkpoint(ckpt_path)
+        except Exception as e:
+            print(e)
 
     def make_mclatte(encoder, decoder):
-        if test_run > 0:
-            # Try loading from checkpoint
-            try:
-                return McLatte.load_from_checkpoint(ckpt_path)
-            except Exception as e:
-                print(e)
-            
         return McLatte(
             encoder=encoder, 
             decoder=decoder, 
@@ -440,7 +435,7 @@ def train_mclatte(
         M,
         input_dim, 
         treatment_dim, 
-        os.path.join(os.getcwd(), f'results/mclatte_{test_run}_idt.ckpt'),
+        ckpt_path,
         make_mclatte,
         test_run,
     )
