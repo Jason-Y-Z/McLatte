@@ -17,7 +17,7 @@ from ray import tune
 def main():
     # Parsing command line arguments
     parser = argparse.ArgumentParser("McLatte training")
-    parser.add_argument("--data", type=str, default="pkpd")
+    parser.add_argument("--data", type=str, default="diabetes")
     args = parser.parse_args()
 
     # Initialising environment
@@ -27,7 +27,7 @@ def main():
 
     # Load model training dataset
     _, M, H, R, D, K, _, X, M_, Y_pre, Y_post, A, T = joblib.load(
-        os.path.join(os.getcwd(), f"data/{args.data}/data_0.25_200.joblib")
+        os.path.join(os.getcwd(), f"data/{args.data}/hp_search.joblib")
     )
 
     # Initialise hyper-parameter search space
@@ -79,7 +79,7 @@ def main():
     )
 
     # Save results
-    analysis.results_df.to_csv(os.path.join(os.getcwd(), "results/mclatte_hp_pkpd.csv"))
+    analysis.results_df.to_csv(os.path.join(os.getcwd(), "results/mclatte_hp.csv"))
 
 
 if __name__ == "__main__":

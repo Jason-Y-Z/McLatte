@@ -16,7 +16,7 @@ from ray import tune
 
 def main():
     parser = argparse.ArgumentParser("RNN training")
-    parser.add_argument("--data", type=str, default="pkpd")
+    parser.add_argument("--data", type=str, default="diabetes")
     args = parser.parse_args()
 
     wandb.init(project="mclatte-test", entity="jasonyz")
@@ -24,7 +24,7 @@ def main():
     ray.init(address=None)
 
     _, _, _, _, _, _, _, _, _, Y_pre, Y_post, _, _ = joblib.load(
-        os.path.join(os.getcwd(), f"data/{args.data}/data_0.25_200.joblib")
+        os.path.join(os.getcwd(), f"data/{args.data}/hp_search.joblib")
     )
 
     hp_config = {
@@ -62,7 +62,7 @@ def main():
         resume="AUTO",
     )
     analysis.results_df.to_csv(
-        os.path.join(os.getcwd(), "results/baseline_rnn_hp_pkpd.csv")
+        os.path.join(os.getcwd(), "results/baseline_rnn_hp.csv")
     )
 
 
