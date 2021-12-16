@@ -83,8 +83,10 @@ class SyncTwin(nn.Module):
         x_hat = self.decoder(C, t, mask)
         return x_hat
 
-    def get_prognostics(self, C, t, mask):
-        y_hat = self.decoder_Y(C, t, mask)
+    def get_prognostics(self, batch_ind, y_control):
+        B_reduced = self.get_B_reduced(batch_ind)
+        y_unit = y_control[:self.n_unit]
+        y_hat = torch.matmul(B_reduced[:, :y_unit.shape[0]], y_unit)
         return y_hat
 
     def get_B_reduced(self, batch_ind):
@@ -171,8 +173,8 @@ class SyncTwinPl(pl.LightningModule):
             "lr_scheduler": scheduler,
         }
 
-    def forward(self, x, t, mask, batch_ind, y_batch, y_mask):
-        loss, l1_loss, _ = self._sync_twin(
+    def forward(self, x, t, mask, batch_ind, y_batch, y_mask, return_C=False):
+        loss, l1_loss, C = self._sync_twin(
             torch.transpose(x, 0, 1),
             torch.transpose(t, 0, 1),
             torch.transpose(mask, 0, 1),
@@ -181,6 +183,8 @@ class SyncTwinPl(pl.LightningModule):
             self._y_control,
             y_mask,
         )
+        if return_C:
+            return C
         return loss, l1_loss
 
     def training_step(self, batch, batch_idx):

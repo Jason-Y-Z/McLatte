@@ -10,7 +10,6 @@ __pycache__/
 data/checkpoints/
 data/test/
 data/tune_*
-data/diabetes/
 data/mclatte-test/
 wandb/
 tests/data
@@ -38,6 +37,8 @@ MANIFEST
 
 # Documents
 documents/
+plots/idt/
+plots/pkpd/
 
 # Results/
 results/
