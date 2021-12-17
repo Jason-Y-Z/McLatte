@@ -1,5 +1,5 @@
-""" 
-Representation learning encoder models, adapted from 
+"""
+Representation learning encoder models, adapted from
 https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
@@ -7,13 +7,18 @@ https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 
 import math
 import torch
-import torch.nn as nn
+from torch import nn
+
 from mclatte.synctwin import grud
 
 
 class RegularEncoder(nn.Module):
+    """
+    LSTM encoder used for representation learning.
+    """
+
     def __init__(self, input_dim, hidden_dim, bidirectional=True):
-        super(RegularEncoder, self).__init__()
+        super().__init__()
         self.input_dim = input_dim
 
         self.lstm = nn.LSTM(input_dim, hidden_dim, bidirectional=bidirectional)
@@ -25,7 +30,7 @@ class RegularEncoder(nn.Module):
         attn_v_init = torch.ones(self.hidden_dim)
         self.attn_v = nn.Parameter(attn_v_init)
 
-    def forward(self, x, t, mask):
+    def forward(self, x, t, mask):  # pylint: disable=unused-argument
         # T, B, Dh
         h, _ = self.lstm(x)  # pylint: disable=not-callable
 
@@ -39,8 +44,12 @@ class RegularEncoder(nn.Module):
 
 
 class GRUDEncoder(nn.Module):
+    """
+    GRU-D encoder used for representation learning.
+    """
+
     def __init__(self, input_dim, hidden_dim):
-        super(GRUDEncoder, self).__init__()
+        super().__init__()
         self.input_dim = input_dim
 
         self.grud = grud.GRUD(input_dim, hidden_dim)

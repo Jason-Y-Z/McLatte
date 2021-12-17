@@ -1,5 +1,5 @@
 import pytest
-from mclatte.mclatte.dataset import TimeSeriesDataset
+from mclatte.mclatte.dataset import McLatteDataset
 from mclatte.mclatte.simulation_data import generate_simulation_data, TreatmentRepr
 from torch.utils.data import DataLoader
 
@@ -20,7 +20,7 @@ def test_ts_dataset(N, M, H, R, D, K, C, mode):
     batch_size = 4
 
     # When
-    dataset = TimeSeriesDataset(
+    dataset = McLatteDataset(
         X=X,
         M=M_,
         Y_pre=Y_pre,

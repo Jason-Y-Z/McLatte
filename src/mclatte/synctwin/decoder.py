@@ -1,30 +1,37 @@
-""" 
-Representation learning decoder models, adapted from 
+"""
+Representation learning decoder models, adapted from
 https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
 
 import torch
-import torch.nn as nn
+from torch import nn
+
 from mclatte.synctwin import grud
 
 
 class RegularDecoder(nn.Module):
+    """
+    LSTM decoder used for representation learing.
+    """
+
     def __init__(self, hidden_dim, output_dim, max_seq_len):
-        super(RegularDecoder, self).__init__()
+        super().__init__()
         self.max_seq_len = max_seq_len
         self.lstm = nn.LSTM(hidden_dim, hidden_dim)
         self.lin = nn.Linear(hidden_dim, output_dim)
 
-    def forward(self, C, t, mask):
+    def forward(
+        self, C, t, mask
+    ):  # pylint: disable=unused-argument, missing-function-docstring
         # C: B, Dh
         out, hidden = self.lstm(C.unsqueeze(0))  # pylint: disable=not-callable
         out = self.lin(out)
 
         out_list = [out]
         # run the remaining iterations
-        for t in range(self.max_seq_len - 1):
+        for _ in range(self.max_seq_len - 1):
             out, hidden = self.lstm(
                 C.unsqueeze(0), hidden
             )  # pylint: disable=not-callable
@@ -35,14 +42,20 @@ class RegularDecoder(nn.Module):
 
 
 class LSTMTimeDecoder(nn.Module):
+    """
+    LSTM time decoder used for representation learing.
+    """
+
     def __init__(self, hidden_dim, output_dim, max_seq_len):
-        super(LSTMTimeDecoder, self).__init__()
+        super().__init__()
         self.max_seq_len = max_seq_len
         self.lstm = nn.LSTM(hidden_dim * 2, hidden_dim)
         self.lin = nn.Linear(hidden_dim, output_dim)
         self.time_lin = nn.Linear(1, hidden_dim)
 
-    def forward(self, C, t, mask):
+    def forward(
+        self, C, t, mask
+    ):  # pylint: disable=unused-argument, missing-function-docstring
         t_delta = t[1:] - t[:-1]
         t_delta_mat = torch.cat((torch.zeros_like(t_delta[0:1, ...]), t_delta), dim=0)
         time_encoded = self.time_lin(t_delta_mat[:, :, 0:1])
@@ -54,9 +67,9 @@ class LSTMTimeDecoder(nn.Module):
 
         out_list = [out]
         # run the remaining iterations
-        for t in range(self.max_seq_len - 1):
+        for t_idx in range(self.max_seq_len - 1):
             lstm_in = torch.cat(
-                (C.unsqueeze(0), time_encoded[(t + 1) : (t + 2), ...]), dim=-1
+                (C.unsqueeze(0), time_encoded[(t_idx + 1) : (t_idx + 2), ...]), dim=-1
             )
             out, hidden = self.lstm(lstm_in, hidden)  # pylint: disable=not-callable
             out = self.lin(out)
@@ -66,8 +79,12 @@ class LSTMTimeDecoder(nn.Module):
 
 
 class GRUDDecoder(nn.Module):
+    """
+    GRU-D decoder used for representation learing.
+    """
+
     def __init__(self, hidden_dim, output_dim, max_seq_len):
-        super(GRUDDecoder, self).__init__()
+        super().__init__()
         self.max_seq_len = max_seq_len
         self.grud = grud.GRUD(hidden_dim, hidden_dim)
         self.lin = nn.Linear(hidden_dim, output_dim)
@@ -88,13 +105,19 @@ class GRUDDecoder(nn.Module):
 
 
 class LinearDecoder(nn.Module):
+    """
+    Linear decoder used for representation learing.
+    """
+
     def __init__(self, hidden_dim, output_dim, max_seq_len):
-        super(LinearDecoder, self).__init__()
+        super().__init__()
         assert output_dim == 1
         self.max_seq_len = max_seq_len
         self.lin = nn.Linear(hidden_dim, max_seq_len)
 
-    def forward(self, C, t, mask):
+    def forward(
+        self, C, t, mask
+    ):  # pylint: disable=unused-argument, missing-function-docstring
         # C: B, Dh -> B, T
         out = self.lin(C)  # pylint: disable=not-callable
         out = out.T.unsqueeze(-1)

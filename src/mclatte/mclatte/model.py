@@ -6,16 +6,18 @@ McLatte model definition and training procedure.
 
 import abc
 import os
+from typing import Callable, Dict
+
 import pytorch_lightning as pl
 import torch
-from mclatte.mclatte.dataset import TimeSeriesDataModule
-from mclatte.mclatte.repr_learn import ENCODERS, DECODERS
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
 from torch import nn
-from typing import Callable, Dict
+
+from mclatte.mclatte.dataset import McLatteDataModule
+from mclatte.mclatte.repr_learn import ENCODERS, DECODERS
 
 
 class McEspresso(pl.LightningModule, abc.ABC):
@@ -54,15 +56,15 @@ class McEspresso(pl.LightningModule, abc.ABC):
         }
 
     @abc.abstractmethod
-    def forward(self, x, a, t, mask):
+    def forward(self, x, a, t, mask):  # pylint: disable=arguments-differ
         ...
 
     @abc.abstractmethod
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx):  # pylint: disable=arguments-differ
         ...
 
     @abc.abstractmethod
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx):  # pylint: disable=arguments-differ
         ...
 
 
@@ -112,6 +114,11 @@ class SkimmedMcLatte(McEspresso):
 
 
 class SemiSkimmedMcLatte(McEspresso):
+    """
+    McLatte whose pre-treatment latent factor
+    equals the post-treatment value.
+    """
+
     def __init__(
         self,
         encoder: nn.Module,
@@ -179,6 +186,10 @@ class SemiSkimmedMcLatte(McEspresso):
 
 
 class McLatte(SemiSkimmedMcLatte):
+    """
+    Multi-cause latent factor treatment effect estimator.
+    """
+
     def forward(self, x, a, t, mask):
         no_op = torch.zeros_like(a)
         C_pre = self._encoder(
@@ -225,7 +236,7 @@ def train_mcespresso(
     )
     pl_model = make_pl_model(encoder, decoder)
 
-    data_module = TimeSeriesDataModule(
+    data_module = McLatteDataModule(
         X=train_data.x,
         M=train_data.m,
         Y_pre=train_data.y_pre,
@@ -270,12 +281,23 @@ def train_mcespresso(
     return pl_model
 
 
+def infer_mcespresso(trained_mcespresso, x, a, t, m):
+    trained_mcespresso.eval()
+    return trained_mcespresso(
+        torch.from_numpy(x).float(),
+        torch.from_numpy(a).float(),
+        torch.from_numpy(t).float(),
+        torch.from_numpy(m).float(),
+    )
+
+
 def train_skimmed_mclatte(
     config: Dict,
     constants,
     train_data,
     test_run: int = 0,
-    checkpoint_dir=None,  # kept for compatibility with ray[tune]
+    # kept for compatibility with ray[tune]
+    checkpoint_dir=None,  # pylint: disable=unused-argument
 ):
     """
     Helper function for ray-tune to run hp search.
@@ -287,7 +309,7 @@ def train_skimmed_mclatte(
         # Try loading from checkpoint
         try:
             return SkimmedMcLatte.load_from_checkpoint(ckpt_path)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             print(e)
 
     def make_skimmed_mclatte(encoder, decoder):
@@ -317,7 +339,7 @@ def train_semi_skimmed_mclatte(
     constants,
     train_data,
     test_run: int = 0,
-    checkpoint_dir=None,  # kept for compatibility with ray[tune]
+    checkpoint_dir=None,  # pylint: disable=unused-argument
 ):
     """
     Helper function for ray-tune to run hp search.
@@ -331,7 +353,7 @@ def train_semi_skimmed_mclatte(
         # Try loading from checkpoint
         try:
             return SemiSkimmedMcLatte.load_from_checkpoint(ckpt_path)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             print(e)
 
     def make_semi_skimmed_mclatte(encoder, decoder):
@@ -363,7 +385,7 @@ def train_mclatte(
     constants,
     train_data,
     test_run: int = 0,
-    checkpoint_dir=None,  # kept for compatibility with ray[tune]
+    checkpoint_dir=None,  # pylint: disable=unused-argument
 ):
     """
     Helper function for ray-tune to run hp search.
@@ -375,7 +397,7 @@ def train_mclatte(
         # Try loading from checkpoint
         try:
             return McLatte.load_from_checkpoint(ckpt_path)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             print(e)
 
     def make_mclatte(encoder, decoder):

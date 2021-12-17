@@ -1,14 +1,15 @@
-""" 
+"""
 Dataset and Dataloader designed for time series predictions.
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
 
+from typing import Optional
+
 import numpy as np
 import pytorch_lightning as pl
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
-from typing import Optional
 
 
 class ShiftingDataset(Dataset):
@@ -46,12 +47,17 @@ class ShiftingDataset(Dataset):
 
 
 class ShiftingDataModule(pl.LightningDataModule):
+    """
+    Pytorch DataModule used for Baseline RNN.
+    """
+
     def __init__(self, Y: np.ndarray, seq_len: int, batch_size: int):
         super().__init__()
 
         self._Y = Y
         self._seq_len = seq_len
         self._batch_size = batch_size
+        self._train_dataset, self._valid_dataset = None, None
 
     def setup(self, stage: Optional[str] = None) -> None:
         if stage in (None, "fit"):

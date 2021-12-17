@@ -1,28 +1,27 @@
+"""
+Utilities for testing models with best hyperparameters.
+"""
+# Author: Jason Zhang (yurenzhang2017@gmail.com)
+# License: BSD 3 clause
+
 import numpy as np
 import pandas as pd
 import torch
+from scipy.stats import ttest_ind
+
 from mclatte.mclatte.model import (
+    infer_mcespresso,
     train_mclatte,
     train_semi_skimmed_mclatte,
     train_skimmed_mclatte,
 )
 from mclatte.rnn.model import (
+    infer_rnn,
     train_baseline_rnn,
 )
 from mclatte.synctwin.model import (
     train_synctwin,
 )
-from scipy.stats import ttest_ind
-
-
-def infer_mcespresso(trained_mcespresso, x, a, t, m):
-    trained_mcespresso.eval()
-    return trained_mcespresso(
-        torch.from_numpy(x).float(),
-        torch.from_numpy(a).float(),
-        torch.from_numpy(t).float(),
-        torch.from_numpy(m).float(),
-    )
 
 
 def test_skimmed_mclatte(
@@ -91,32 +90,6 @@ def test_mclatte(
     ).item()
 
 
-def rnn_predict(trained_rnn, Y_pre, Y_post, return_Y_pred=False):
-    """
-    Make predictions using results from previous time steps.
-    """
-    Y = Y_pre
-    losses = 0.0
-    Y_pred = []
-    for i in range(Y_post.shape[1]):
-        Y_tilde = trained_rnn(torch.from_numpy(Y).float().unsqueeze(2)).squeeze()
-
-        Y = np.concatenate((Y[:, 1:], Y_tilde.cpu().detach().numpy()[:, [-1]]), axis=1)
-
-        losses += torch.nn.functional.l1_loss(
-            Y_tilde[:, -1], torch.from_numpy(Y_post).float()[:, i]
-        ).item()
-        Y_pred.append(Y_tilde[:, -1])
-    if return_Y_pred:
-        return torch.stack(Y_pred, 1)
-    return losses / Y_post.shape[1]
-
-
-def infer_rnn(trained_rnn, Y_pre_test, Y_post_test, return_Y_pred=False):
-    trained_rnn.eval()
-    return rnn_predict(trained_rnn, Y_pre_test, Y_post_test, return_Y_pred)
-
-
 def test_rnn(
     rnn_config,
     train_data,
@@ -130,13 +103,6 @@ def test_rnn(
         test_run=run_idx,
     )
     return infer_rnn(trained_rnn, test_data.y_pre, test_data.y_post)
-
-
-def infer_synctwin(trained_synctwin, N_test, Y_post_test):
-    trained_synctwin.eval()
-    return trained_synctwin._sync_twin.get_prognostics(
-        torch.arange(0, N_test).cpu(), torch.from_numpy(Y_post_test).float().cpu()
-    )
 
 
 def test_synctwin(
@@ -172,8 +138,8 @@ def test_synctwin(
 def test_losses(losses, loss_names):
     t_test_results = pd.DataFrame(columns=loss_names, index=loss_names)
 
-    for i in range(len(losses)):
-        for j in range(len(losses)):
-            t = ttest_ind(losses[i], losses[j], alternative="less")
+    for i, loss_i in enumerate(losses):
+        for j, loss_j in enumerate(losses):
+            t = ttest_ind(loss_i, loss_j, alternative="less")
             t_test_results[loss_names[i]][loss_names[j]] = t.pvalue
     return t_test_results

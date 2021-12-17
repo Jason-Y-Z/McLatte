@@ -1,5 +1,5 @@
-""" 
-Representation learning models, adapted from 
+"""
+Representation learning models, adapted from
 https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
@@ -7,12 +7,16 @@ https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 
 import math
 import torch
-import torch.nn as nn
+from torch import nn
 
 
 class LstmEncoder(nn.Module):
+    """
+    Attentive LSTM encoder used in representation learning.
+    """
+
     def __init__(self, input_dim, hidden_dim, treatment_dim):
-        super(LstmEncoder, self).__init__()
+        super().__init__()
         self.input_dim = input_dim
 
         self._lstm = nn.LSTM(input_dim, hidden_dim, bidirectional=False)
@@ -41,13 +45,20 @@ class LstmEncoder(nn.Module):
 
 
 class LstmDecoder(nn.Module):
+    """
+    LSTM decoder used in representation learning.
+    """
+
     def __init__(self, hidden_dim, output_dim, max_seq_len):
-        super(LstmDecoder, self).__init__()
+        super().__init__()
         self.max_seq_len = max_seq_len
         self._lstm = nn.LSTM(hidden_dim, hidden_dim)
         self._linear = nn.Linear(hidden_dim, output_dim)
 
-    def forward(self, C, *_):  # C: [batch_size, hidden_dim]
+    def forward(self, C, *_):
+        """
+        C.shape: [batch_size, hidden_dim]
+        """
         # Run first timestep to get the first hidden vector
         out, hidden = self._lstm(C.unsqueeze(0))
         out = self._linear(out)  # [batch_size, output_dim]

@@ -1,17 +1,19 @@
-""" 
+"""
 Application script for running baseline RNN model training.
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
 
 import argparse
+import os
+
 import joblib
 import numpy as np
-import os
 import ray
-import wandb
-from mclatte.rnn.model import train_baseline_rnn
 from ray import tune
+import wandb
+
+from mclatte.rnn.model import train_baseline_rnn
 
 
 def main():
