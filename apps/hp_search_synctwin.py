@@ -82,9 +82,7 @@ def main():
     )
 
     # Save results
-    analysis.results_df.to_csv(
-        os.path.join(os.getcwd(), "results/synctwin_hp.csv")
-    )
+    analysis.results_df.to_csv(os.path.join(os.getcwd(), "results/synctwin_hp.csv"))
 
 
 if __name__ == "__main__":
