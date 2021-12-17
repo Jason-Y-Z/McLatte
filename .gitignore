@@ -37,13 +37,10 @@ MANIFEST
 
 # Documents
 documents/
-plots/idt/
-plots/pkpd/
+plots/
 
 # Results/
-results/
-results_idt/*.ckpt
-results_pkpd/*.ckpt
+results/**/trained_models
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

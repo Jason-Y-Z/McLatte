@@ -17,7 +17,7 @@ from ray import tune
 def main():
     # Parsing command line arguments
     parser = argparse.ArgumentParser("SyncTwin training")
-    parser.add_argument("--data", type=str, default="pkpd")
+    parser.add_argument("--data", type=str, default="diabetes")
     args = parser.parse_args()
 
     # Initialising environment
@@ -27,7 +27,7 @@ def main():
 
     # Load model training dataset
     N, M, _, R, D, _, _, X, M_, _, Y_post, A, T = joblib.load(
-        os.path.join(os.getcwd(), f"data/{args.data}/data_0.25_200.joblib")
+        os.path.join(os.getcwd(), f"data/{args.data}/hp_search.joblib")
     )
     Y_mask = np.all(A == 0, axis=1)
     Y_control = Y_post[Y_mask]
@@ -83,7 +83,7 @@ def main():
 
     # Save results
     analysis.results_df.to_csv(
-        os.path.join(os.getcwd(), "results/synctwin_hp_pkpd.csv")
+        os.path.join(os.getcwd(), "results/synctwin_hp.csv")
     )
 
 
