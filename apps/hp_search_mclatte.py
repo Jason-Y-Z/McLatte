@@ -1,22 +1,24 @@
-""" 
-Application script for running McLatte Whole model training.
+"""
+Application script for running Vanilla McLatte model training.
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
 
 import argparse
+import os
+
 import joblib
 import numpy as np
-import os
 import ray
-import wandb
-from mclatte.mclatte.model import train_mclatte
 from ray import tune
+import wandb
+
+from mclatte.mclatte.model import train_mclatte
 
 
 def main():
     # Parsing command line arguments
-    parser = argparse.ArgumentParser("McLatte training")
+    parser = argparse.ArgumentParser("Vanilla McLatte training")
     parser.add_argument("--data", type=str, default="diabetes")
     args = parser.parse_args()
 

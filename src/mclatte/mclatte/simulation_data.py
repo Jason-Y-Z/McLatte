@@ -1,12 +1,13 @@
-""" 
+"""
 Data generation utilities for the simulation study.
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
 
 import enum
-import numpy as np
 from typing import Callable, Tuple, Union
+
+import numpy as np
 
 
 def _logit(x):
@@ -189,6 +190,13 @@ def simulate_masking_vectors(
 
 
 class TreatmentRepr(enum.Enum):
+    """
+    Treatment representation types:
+        binary - 0/1
+        bounded - Uniform(a, b)
+        real-valued - Normal(mu, sigma^2)
+    """
+
     BINARY = 0
     BOUNDED = 1
     REAL_VALUED = 2
@@ -424,7 +432,9 @@ def generate_simulation_data(
     )
     M_ = simulate_masking_vectors(N, D, (M + H) * R)
     A = simulate_treatment_vectors(N, K, treatment_repr, p_0, mu_conf)
-    Y_pre, Y_post = simulate_outcomes(X, A, N, M, H, R, D, K, C)
+    Y_pre, Y_post = simulate_outcomes(  # pylint: disable=unbalanced-tuple-unpacking
+        X, A, N, M, H, R, D, K, C
+    )
     T = np.repeat(
         np.repeat(
             np.arange(-R * M, R * H).reshape((1, -1, 1)),

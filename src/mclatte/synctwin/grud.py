@@ -7,21 +7,23 @@ Created on Sat May 12 16:48:54 2018
 
 import math
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-from mclatte.synctwin._config import DEVICE
+from torch import nn
 from torch.autograd import Variable
 from torch.nn.parameter import Parameter
 
+from mclatte.synctwin._config import DEVICE
+
 
 class FilterLinear(nn.Module):
+    """
+    filter_square_matrix : filter square matrix, whose each elements is 0 or 1.
+    """
+
     def __init__(
         self, in_features, out_features, filter_square_matrix, bias=True, device=DEVICE
     ):
-        """
-        filter_square_matrix : filter square matrix, whose each elements is 0 or 1.
-        """
-        super(FilterLinear, self).__init__()
+        super().__init__()
         self.in_features = in_features
         self.out_features = out_features
 
@@ -61,28 +63,30 @@ class FilterLinear(nn.Module):
 
 
 class GRUD(nn.Module):
-    def __init__(self, input_size, hidden_size, output_last=False, device=DEVICE):
-        """
-        Recurrent Neural Networks for Multivariate Times Series with Missing Values
-        GRU-D: GRU exploit two representations of informative missingness patterns, i.e., masking and time interval.
-        Implemented based on the paper:
-        @article{che2018recurrent,
-          title={Recurrent neural networks for multivariate time series with missing values},
-          author={Che, Zhengping and Purushotham, Sanjay and Cho, Kyunghyun and Sontag, David and Liu, Yan},
-          journal={Scientific reports},
-          volume={8},
-          number={1},
-          pages={6085},
-          year={2018},
-          publisher={Nature Publishing Group}
-        }
-        GRU-D:
-            input_size: variable dimension of each time
-            hidden_size: dimension of hidden_state
-            mask_size: dimension of masking vector
-        """
+    """
+    Recurrent Neural Networks for Multivariate Times Series with Missing Values
+    GRU-D: GRU exploit two representations of informative missingness patterns,
+    i.e., masking and time interval.
+    Implemented based on the paper:
+    @article{che2018recurrent,
+        title={Recurrent neural networks for multivariate time series with missing values},
+        author={Che, Zhengping and Purushotham, Sanjay and Cho,
+        Kyunghyun and Sontag, David and Liu, Yan},
+        journal={Scientific reports},
+        volume={8},
+        number={1},
+        pages={6085},
+        year={2018},
+        publisher={Nature Publishing Group}
+    }
+    GRU-D:
+        input_size: variable dimension of each time
+        hidden_size: dimension of hidden_state
+        mask_size: dimension of masking vector
+    """
 
-        super(GRUD, self).__init__()
+    def __init__(self, input_size, hidden_size, output_last=False, device=DEVICE):
+        super().__init__()
 
         self.hidden_size = hidden_size
         self.delta_size = input_size
@@ -112,23 +116,14 @@ class GRUD(nn.Module):
         self.output_last = output_last
 
     def step(self, x, x_last_obsv, h, mask, delta):
-
-        batch_size = x.shape[0]
-        dim_size = x.shape[1]
-
         delta_x = torch.exp(-torch.max(self.zeros, self.gamma_x_l(delta)))
         delta_h = torch.exp(
-            -torch.max(self.zeros_hidden, self.gamma_h_l(delta))
-        )  # pylint: disable=not-callable
-
-        # print('mask', mask.shape)
-        # print('x', x.shape)
-        # print('delta_x', delta_x.shape)
-        # print('x_last_obsv', x_last_obsv.shape)
+            -torch.max(
+                self.zeros_hidden, self.gamma_h_l(delta)  # pylint: disable=not-callable
+            )
+        )
 
         x = mask * x + (1 - mask) * (delta_x * x_last_obsv)
-        # print('h', h.shape)
-        # print('delta_h', delta_h.shape)
         h = delta_h * h
 
         combined = torch.cat((x, h, mask), 1)
@@ -142,9 +137,7 @@ class GRUD(nn.Module):
 
     def forward(self, input):  # pylint: disable=redefined-builtin
         batch_size = input.size(0)
-        type_size = input.size(1)
         step_size = input.size(2)
-        spatial_size = input.size(3)
 
         Hidden_State = self.initHidden(batch_size)
         X = torch.squeeze(input[:, 0, :, :])
@@ -168,8 +161,7 @@ class GRUD(nn.Module):
 
         if self.output_last:
             return outputs[:, -1, :]
-        else:
-            return outputs
+        return outputs
 
     def initHidden(self, batch_size):
         Hidden_State = Variable(

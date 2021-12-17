@@ -1,4 +1,4 @@
-""" 
+"""
 Application script for PKPD data generation, adapted from
 https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 """
@@ -7,9 +7,11 @@ https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 
 import argparse
 import pickle
+
 import numpy as np
 import numpy.random
 import torch
+
 from mclatte.synctwin._config import DEVICE
 from mclatte.synctwin.pkpd import (
     get_Kin,
@@ -45,7 +47,7 @@ hidden_confounder = int(args.hidden_confounder)
 
 assert treatment_sample <= control_sample
 
-print("Data generation with seed {}".format(seed))
+print(f"Data generation with seed {seed}")
 numpy.random.seed(seed)
 torch.manual_seed(seed)
 
@@ -54,7 +56,7 @@ print("Generating data")
 noise = 0.1
 n_basis = 6
 n_cluster = 2
-base_path_data = "data/{}-seed-".format(sim_id) + str(seed)
+base_path_data = f"data/{sim_id}-seed-{seed}"
 create_paths(base_path_data)
 data_path = base_path_data + "/{}-{}.{}"
 

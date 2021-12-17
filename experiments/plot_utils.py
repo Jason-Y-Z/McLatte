@@ -1,21 +1,27 @@
+"""
+Utilities for plotting model testing results.
+"""
+# Author: Jason Zhang (yurenzhang2017@gmail.com)
+# License: BSD 3 clause
+
+import os
+
 import joblib
 import numpy as np
-import os
 import plotly.graph_objects as go
-from .test_utils import (
-    infer_mcespresso,
-    infer_rnn,
-    infer_synctwin,
-)
+
 from mclatte.mclatte.model import (
+    infer_mcespresso,
     McLatte,
     SemiSkimmedMcLatte,
     SkimmedMcLatte,
 )
 from mclatte.rnn.model import (
+    infer_rnn,
     BaselineRnn,
 )
 from mclatte.synctwin.model import (
+    infer_synctwin,
     SyncTwinPl,
 )
 

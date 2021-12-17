@@ -1,4 +1,4 @@
-""" 
+"""
 SyncTwin model, adapted from
 https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 """
@@ -6,22 +6,28 @@ https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 # License: BSD 3 clause
 
 import os
+from typing import Dict
+
 import pytorch_lightning as pl
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-from mclatte.synctwin._config import D_TYPE, DEVICE
-from mclatte.synctwin.dataset import SyncTwinDataModule
-from mclatte.synctwin.decoder import RegularDecoder
-from mclatte.synctwin.encoder import RegularEncoder
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
-from typing import Dict
+from torch import nn
+
+from mclatte.synctwin._config import D_TYPE, DEVICE
+from mclatte.synctwin.dataset import SyncTwinDataModule
+from mclatte.synctwin.decoder import RegularDecoder
+from mclatte.synctwin.encoder import RegularEncoder
 
 
 class SyncTwin(nn.Module):
+    """
+    Synthetic Twin model for treatment effect estimation.
+    """
+
     def __init__(
         self,
         n_unit,
@@ -39,7 +45,7 @@ class SyncTwin(nn.Module):
         reduce_gpu_memory=False,
         inference_only=False,
     ):
-        super(SyncTwin, self).__init__()
+        super().__init__()
         assert not (reduce_gpu_memory and inference_only)
 
         self.n_unit = n_unit
@@ -119,10 +125,12 @@ class SyncTwin(nn.Module):
         return err_mse * self.lam_recon
 
     def prognostic_loss(self, B_reduced, y_batch, y_control, y_mask):
-        # y_batch: B, DY
-        # y_mask: B (1 if control, 0 if treated)
-        # y_all: N0, DY
-        # B_reduced: B, N0
+        """
+        y_batch: B, DY
+        y_mask: B (1 if control, 0 if treated)
+        y_all: N0, DY
+        B_reduced: B, N0
+        """
         y_hat = torch.matmul(B_reduced, y_control)
         mse = (y_batch - y_hat) ** 2
         masked_mse = torch.sum(mse * y_mask.unsqueeze(-1))
@@ -150,6 +158,10 @@ class SyncTwin(nn.Module):
 
 
 class SyncTwinPl(pl.LightningModule):
+    """
+    Pytorch Lightning module for SyncTwin.
+    """
+
     def __init__(
         self,
         sync_twin: SyncTwin,
@@ -160,7 +172,7 @@ class SyncTwinPl(pl.LightningModule):
         super().__init__()
 
         self.save_hyperparameters()
-        self._sync_twin = sync_twin
+        self.sync_twin = sync_twin
         self._lr = lr
         self._gamma = gamma
         self._y_control = y_control
@@ -173,8 +185,10 @@ class SyncTwinPl(pl.LightningModule):
             "lr_scheduler": scheduler,
         }
 
-    def forward(self, x, t, mask, batch_ind, y_batch, y_mask, return_C=False):
-        loss, l1_loss, C = self._sync_twin(
+    def forward(
+        self, x, t, mask, batch_ind, y_batch, y_mask, return_C=False
+    ):  # pylint: disable=arguments-differ
+        loss, l1_loss, C = self.sync_twin(
             torch.transpose(x, 0, 1),
             torch.transpose(t, 0, 1),
             torch.transpose(mask, 0, 1),
@@ -187,7 +201,9 @@ class SyncTwinPl(pl.LightningModule):
             return C
         return loss, l1_loss
 
-    def training_step(self, batch, batch_idx):
+    def training_step(
+        self, batch, batch_idx
+    ):  # pylint: disable=arguments-differ, unused-argument
         x, t, mask, batch_ind, y_batch, y_mask = batch
 
         loss, _ = self(x, t, mask, batch_ind, y_batch, y_mask)
@@ -195,7 +211,9 @@ class SyncTwinPl(pl.LightningModule):
         self.log("ptl/loss", loss)
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(
+        self, batch, batch_idx
+    ):  # pylint: disable=arguments-differ, unused-argument
         x, t, mask, batch_ind, y_batch, y_mask = batch
 
         _, loss = self(x, t, mask, batch_ind, y_batch, y_mask)
@@ -211,7 +229,7 @@ def train_synctwin(
     test_run: int = 0,
     device=DEVICE,
     ckpt_path=None,
-    checkpoint_dir=None,  # kept for compatibility with ray[tune]
+    checkpoint_dir=None,  # pylint: disable=unused-argument
 ):
     """
     Helper function for ray-tune to run hp search.
@@ -228,7 +246,7 @@ def train_synctwin(
         # Try loading from checkpoint
         try:
             return SyncTwinPl.load_from_checkpoint(ckpt_path)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             print(e)
 
     enc = RegularEncoder(input_dim=constants.d, hidden_dim=config["hidden_dim"])
@@ -297,3 +315,10 @@ def train_synctwin(
         trainer.save_checkpoint(ckpt_path)
 
     return pl_model
+
+
+def infer_synctwin(trained_synctwin, N_test, Y_post_test):
+    trained_synctwin.eval()
+    return trained_synctwin.sync_twin.get_prognostics(
+        torch.arange(0, N_test).cpu(), torch.from_numpy(Y_post_test).float().cpu()
+    )

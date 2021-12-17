@@ -1,4 +1,4 @@
-""" 
+"""
 Pharmacokinetic-Pharmacodynamic model for simulated data, adapted from
 https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 """
@@ -9,10 +9,11 @@ import numpy as np
 import numpy.random
 import scipy.integrate
 import torch
+
 from mclatte.synctwin._config import DEVICE
 
 
-def f(t, y, Kin, K, O, H, D50):  # noqa: E741
+def f(t, y, Kin, K, O, H, D50):
     P = y[0]
     R = y[1]
     D = y[2]
@@ -52,12 +53,12 @@ def solve(init, Kin, K, Os, H, D50, step=30):
 
 def get_Kin(step=30, n_basis=12):
     # define Kin
-    Kin_b_list = list()
+    Kin_b_list = []
     Kin_b_list.append(np.ones(step + 1))
     x = np.arange(step + 1) / step
     Kin_b_list.append(x)
 
-    for i in range(n_basis - 2):
+    for _ in range(n_basis - 2):
         bn = 2 * x * Kin_b_list[-1] - Kin_b_list[-2]
         Kin_b_list.append(bn)
 
@@ -83,7 +84,7 @@ def get_clustered_Kin(Kin_b, n_cluster, n_sample_total):
 
     Kin_list = []
     for mask in mask_list:
-        for j in range(n_sample_cluster):
+        for _ in range(n_sample_cluster):
             Kin = np.matmul(Kin_b, numpy.random.randn(n_basis) * mask)
             Kin_list.append(Kin)
 

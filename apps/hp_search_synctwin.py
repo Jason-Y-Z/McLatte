@@ -1,17 +1,19 @@
-""" 
+"""
 Application script for running SyncTwin model training.
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
 
 import argparse
+import os
+
 import joblib
 import numpy as np
-import os
 import ray
-import wandb
-from mclatte.synctwin.model import train_synctwin
 from ray import tune
+import wandb
+
+from mclatte.synctwin.model import train_synctwin
 
 
 def main():

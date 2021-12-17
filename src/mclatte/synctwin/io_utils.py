@@ -1,13 +1,14 @@
-""" 
+"""
 Input/output utilities, adapted from
 https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
 
-import numpy as np
 import os
 import pickle
+
+import numpy as np
 import torch
 
 
@@ -94,20 +95,20 @@ def load_data_dict(version=1):
         version = ""
     else:
         version = str(version)
-    val_arr1 = np.load("real_data{}/val_arr1".format(str(version)) + ".npy")
-    val_mask_arr1 = np.load("real_data{}/val_mask_arr1".format(str(version)) + ".npy")
-    ts_arr1 = np.load("real_data{}/ts_arr1".format(str(version)) + ".npy")
-    ts_mask_arr1 = np.load("real_data{}/ts_mask_arr1".format(str(version)) + ".npy")
-    patid1 = np.load("real_data{}/patid1".format(str(version)) + ".npy")
+    val_arr1 = np.load(f"real_data{version}/val_arr1.npy")
+    val_mask_arr1 = np.load(f"real_data{version}/val_mask_arr1.npy")
+    ts_arr1 = np.load(f"real_data{version}/ts_arr1.npy")
+    ts_mask_arr1 = np.load(f"real_data{version}/ts_mask_arr1.npy")
+    patid1 = np.load(f"real_data{version}/patid1.npy")
 
-    val_arr0 = np.load("real_data{}/val_arr0".format(str(version)) + ".npy")
-    val_mask_arr0 = np.load("real_data{}/val_mask_arr0".format(str(version)) + ".npy")
-    ts_arr0 = np.load("real_data{}/ts_arr0".format(str(version)) + ".npy")
-    ts_mask_arr0 = np.load("real_data{}/ts_mask_arr0".format(str(version)) + ".npy")
-    patid0 = np.load("real_data{}/patid0".format(str(version)) + ".npy")
+    val_arr0 = np.load(f"real_data{version}/val_arr0.npy")
+    val_mask_arr0 = np.load(f"real_data{version}/val_mask_arr0.npy")
+    ts_arr0 = np.load(f"real_data{version}/ts_arr0.npy")
+    ts_mask_arr0 = np.load(f"real_data{version}/ts_mask_arr0.npy")
+    patid0 = np.load(f"real_data{version}/patid0.npy")
 
-    Y0 = np.load("real_data{}/Y0".format(str(version)) + ".npy")
-    Y1 = np.load("real_data{}/Y1".format(str(version)) + ".npy")
+    Y0 = np.load(f"real_data{version}/Y0.npy")
+    Y1 = np.load(f"real_data{version}/Y1.npy")
 
     data1 = {
         "val_arr": val_arr1,

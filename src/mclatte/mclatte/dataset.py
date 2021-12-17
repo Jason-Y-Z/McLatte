@@ -1,17 +1,23 @@
-""" 
-Dataset and DataLoader designed for representing 
+"""
+Dataset and DataLoader designed for representing
 Multi-cause ITE problem setting.
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
+
+from typing import Optional
+
 import numpy as np
 import pytorch_lightning as pl
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
-from typing import Optional
 
 
-class TimeSeriesDataset(Dataset):
+class McLatteDataset(Dataset):
+    """
+    Pytorch Dataset defined to provide input for McLatte.
+    """
+
     def __init__(
         self,
         X: np.ndarray,
@@ -45,7 +51,12 @@ class TimeSeriesDataset(Dataset):
         return x, a, t, mask, y_pre, y_post
 
 
-class TimeSeriesDataModule(pl.LightningDataModule):
+class McLatteDataModule(pl.LightningDataModule):
+    """
+    Pytorch Lightning DataModule defined to provide
+    input for McLatte.
+    """
+
     def __init__(
         self,
         X: np.ndarray,
@@ -67,11 +78,12 @@ class TimeSeriesDataModule(pl.LightningDataModule):
         self._T = T
         self._batch_size = batch_size
         self._use_persistent_workers = use_persistent_workers
+        self._train_dataset, self._valid_dataset = None, None
 
     def setup(self, stage: Optional[str] = None) -> None:
         if stage in (None, "fit"):
             # Train-Validation split
-            full_dataset = TimeSeriesDataset(
+            full_dataset = McLatteDataset(
                 self._X,
                 self._M,
                 self._Y_pre,

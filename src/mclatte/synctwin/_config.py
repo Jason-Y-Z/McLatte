@@ -1,3 +1,7 @@
+"""
+Configurations used for SyncTwin.
+"""
+
 import torch
 
 D_TYPE = torch.float32

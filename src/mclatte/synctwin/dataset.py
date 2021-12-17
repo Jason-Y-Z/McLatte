@@ -1,16 +1,22 @@
-""" 
+"""
 Dataset and DataLoader designed for SyncTwin.
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
+
+from typing import Optional
+
 import numpy as np
 import pytorch_lightning as pl
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
-from typing import Optional
 
 
 class SyncTwinDataset(Dataset):
+    """
+    Pytorch Dataset defined to provide input for SyncTwin.
+    """
+
     def __init__(
         self,
         X: np.ndarray,
@@ -41,6 +47,11 @@ class SyncTwinDataset(Dataset):
 
 
 class SyncTwinDataModule(pl.LightningDataModule):
+    """
+    Pytorch Lightning DataModule defined to
+    provide input for SyncTwin.
+    """
+
     def __init__(
         self,
         X: np.ndarray,
@@ -58,6 +69,7 @@ class SyncTwinDataModule(pl.LightningDataModule):
         self._Y_batch = Y_batch
         self._Y_mask = Y_mask
         self._batch_size = batch_size
+        self._train_dataset, self._valid_dataset = None, None
 
     def setup(self, stage: Optional[str] = None) -> None:
         if stage in (None, "fit"):
