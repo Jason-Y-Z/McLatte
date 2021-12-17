@@ -5,9 +5,9 @@ https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
 
-import synctwin.grud as grud
 import torch
 import torch.nn as nn
+from mclatte.synctwin import grud
 
 
 class RegularDecoder(nn.Module):

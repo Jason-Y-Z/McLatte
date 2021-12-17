@@ -10,15 +10,15 @@ import pickle
 import numpy as np
 import numpy.random
 import torch
-from synctwin._config import DEVICE
-from synctwin.pkpd import (
+from mclatte.synctwin._config import DEVICE
+from mclatte.synctwin.pkpd import (
     get_Kin,
     get_clustered_Kin,
     get_covariate,
     get_treatment_effect,
     generate_data,
 )
-from synctwin.io_utils import create_paths
+from mclatte.synctwin.io_utils import create_paths
 
 
 parser = argparse.ArgumentParser("PKPD simulation: data generation")

@@ -9,8 +9,7 @@ import numpy as np
 import numpy.random
 import scipy.integrate
 import torch
-
-from synctwin._config import DEVICE
+from mclatte.synctwin._config import DEVICE
 
 
 def f(t, y, Kin, K, O, H, D50):  # noqa: E741

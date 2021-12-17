@@ -10,14 +10,14 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from mclatte.synctwin._config import D_TYPE, DEVICE
+from mclatte.synctwin.dataset import SyncTwinDataModule
+from mclatte.synctwin.decoder import RegularDecoder
+from mclatte.synctwin.encoder import RegularEncoder
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
-from synctwin._config import D_TYPE, DEVICE
-from synctwin.dataset import SyncTwinDataModule
-from synctwin.decoder import RegularDecoder
-from synctwin.encoder import RegularEncoder
 from typing import Dict
 
 
@@ -202,20 +202,12 @@ class SyncTwinPl(pl.LightningModule):
 
         self.log("ptl/valid_loss", loss)
         return loss
-
+    
 
 def train_synctwin(
     config: Dict,
-    X,
-    M_,
-    T,
-    Y_batch,
-    Y_control,
-    Y_mask,
-    N: int,
-    D: int,
-    n_treated: int,
-    pre_trt_x_len: int,
+    constants,
+    train_data, 
     test_run: int = 0,
     device=DEVICE,
     ckpt_path=None,
@@ -239,13 +231,13 @@ def train_synctwin(
         except Exception as e:
             print(e)
 
-    enc = RegularEncoder(input_dim=D, hidden_dim=config["hidden_dim"])
+    enc = RegularEncoder(input_dim=constants.d, hidden_dim=config["hidden_dim"])
     dec = RegularDecoder(
-        hidden_dim=enc.hidden_dim, output_dim=enc.input_dim, max_seq_len=pre_trt_x_len
+        hidden_dim=enc.hidden_dim, output_dim=enc.input_dim, max_seq_len=constants.r * constants.m
     )
     sync_twin = SyncTwin(
-        n_unit=N - n_treated,
-        n_treated=n_treated,
+        n_unit=train_data.y_control.shape[0],
+        n_treated=train_data.n - train_data.y_control.shape[0],
         reg_B=config["reg_B"],
         lam_express=config["lam_express"],
         lam_recon=config["lam_recon"],
@@ -259,15 +251,15 @@ def train_synctwin(
         sync_twin=sync_twin,
         lr=lr,
         gamma=gamma,
-        y_control=torch.from_numpy(Y_control).float().to(device),
+        y_control=torch.from_numpy(train_data.y_control).float().to(device),
     )
 
     data_module = SyncTwinDataModule(
-        X=X,
-        M=M_,
-        T=T,
-        Y_batch=Y_batch,
-        Y_mask=Y_mask,
+        X=train_data.x,
+        M=train_data.m,
+        T=train_data.t,
+        Y_batch=train_data.y_post,
+        Y_mask=train_data.y_mask,
         batch_size=config["batch_size"],
     )
     metrics = {"loss": "ptl/loss", "valid_loss": "ptl/valid_loss"}
@@ -297,8 +289,6 @@ def train_synctwin(
         logger=logger,
         callbacks=callbacks,
         progress_bar_refresh_rate=0,
-        devices=4,
-        accelerator="auto",
     )
     trainer.fit(pl_model, data_module)
     if test_run > 0:

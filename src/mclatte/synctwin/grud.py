@@ -9,7 +9,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from synctwin._config import DEVICE
+from mclatte.synctwin._config import DEVICE
 from torch.autograd import Variable
 from torch.nn.parameter import Parameter
 
