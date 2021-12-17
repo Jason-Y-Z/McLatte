@@ -20,9 +20,10 @@ from typing import Callable, Dict
 
 class McEspresso(pl.LightningModule, abc.ABC):
     """
-    Essence of the McLatte flavours, which defines 
+    Essence of the McLatte flavours, which defines
     common parameters and configurations.
     """
+
     def __init__(
         self,
         encoder: nn.Module,
@@ -70,6 +71,7 @@ class SkimmedMcLatte(McEspresso):
     McLatte with no diagnostic loss and pre-treatment
     latent factor equal the post-treatment value.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

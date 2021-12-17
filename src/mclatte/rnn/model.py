@@ -139,7 +139,7 @@ def train_baseline_rnn(
         callbacks=callbacks,
         progress_bar_refresh_rate=0,
         devices=4,
-        accelerator='cpu',
+        accelerator="cpu",
     )
 
     trainer.fit(pl_model, data_module)

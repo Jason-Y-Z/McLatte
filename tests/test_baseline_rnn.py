@@ -3,9 +3,9 @@ import numpy as np
 import pytest
 import torch
 from mclatte.mclatte.simulation_data import generate_simulation_data, TreatmentRepr
+from mclatte.rnn.model import BaselineRnn
+from mclatte.rnn.dataset import ShiftingDataModule
 from pytorch_lightning import Trainer
-from rnn.model import BaselineRnn
-from rnn.dataset import ShiftingDataModule
 
 
 # Given

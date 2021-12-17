@@ -61,9 +61,7 @@ def main():
         verbose=1,
         resume="AUTO",
     )
-    analysis.results_df.to_csv(
-        os.path.join(os.getcwd(), "results/baseline_rnn_hp.csv")
-    )
+    analysis.results_df.to_csv(os.path.join(os.getcwd(), "results/baseline_rnn_hp.csv"))
 
 
 if __name__ == "__main__":

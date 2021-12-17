@@ -85,8 +85,8 @@ class SyncTwin(nn.Module):
 
     def get_prognostics(self, batch_ind, y_control):
         B_reduced = self.get_B_reduced(batch_ind)
-        y_unit = y_control[:self.n_unit]
-        y_hat = torch.matmul(B_reduced[:, :y_unit.shape[0]], y_unit)
+        y_unit = y_control[: self.n_unit]
+        y_hat = torch.matmul(B_reduced[:, : y_unit.shape[0]], y_unit)
         return y_hat
 
     def get_B_reduced(self, batch_ind):
@@ -158,7 +158,7 @@ class SyncTwinPl(pl.LightningModule):
         y_control: torch.Tensor,
     ):
         super().__init__()
-        
+
         self.save_hyperparameters()
         self._sync_twin = sync_twin
         self._lr = lr
@@ -202,12 +202,12 @@ class SyncTwinPl(pl.LightningModule):
 
         self.log("ptl/valid_loss", loss)
         return loss
-    
+
 
 def train_synctwin(
     config: Dict,
     constants,
-    train_data, 
+    train_data,
     test_run: int = 0,
     device=DEVICE,
     ckpt_path=None,
@@ -233,7 +233,9 @@ def train_synctwin(
 
     enc = RegularEncoder(input_dim=constants.d, hidden_dim=config["hidden_dim"])
     dec = RegularDecoder(
-        hidden_dim=enc.hidden_dim, output_dim=enc.input_dim, max_seq_len=constants.r * constants.m
+        hidden_dim=enc.hidden_dim,
+        output_dim=enc.input_dim,
+        max_seq_len=constants.r * constants.m,
     )
     sync_twin = SyncTwin(
         n_unit=train_data.y_control.shape[0],
