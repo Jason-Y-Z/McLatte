@@ -1,5 +1,5 @@
 import torch
-from mclatte.repr_learn import LstmDecoder, LstmEncoder
+from mclatte.mclatte.repr_learn import LstmDecoder, LstmEncoder
 
 
 def test_lstm_encoder():

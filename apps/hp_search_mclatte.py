@@ -10,7 +10,7 @@ import numpy as np
 import os
 import ray
 import wandb
-from mclatte.model import train_mclatte
+from mclatte.mclatte.model import train_mclatte
 from ray import tune
 
 
@@ -34,14 +34,14 @@ def main():
     hp_config = {
         "encoder_class": tune.choice(["lstm"]),
         "decoder_class": tune.choice(["lstm"]),
-        "hidden_dim": tune.choice([4, 16, 64]),
+        "hidden_dim": tune.choice([4, 8, 16]),
         "batch_size": tune.choice([64]),
         "epochs": tune.choice([100]),
-        "lr": tune.loguniform(1e-4, 1e-0),
+        "lr": tune.loguniform(1e-4, 1e0),
         "gamma": tune.uniform(0.5, 0.99),
-        "lambda_r": tune.loguniform(1e-2, 1e2),
-        "lambda_d": tune.loguniform(1e-2, 1e2),
-        "lambda_p": tune.loguniform(1e-2, 1e2),
+        "lambda_r": tune.loguniform(1e-2, 1e0),
+        "lambda_d": tune.loguniform(1e-2, 1e0),
+        "lambda_p": tune.loguniform(1e-2, 1e0),
     }
 
     # Run hyper-parameter search

@@ -6,9 +6,9 @@ https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 # License: BSD 3 clause
 
 import math
-import synctwin.grud as grud
 import torch
 import torch.nn as nn
+from mclatte.synctwin import grud
 
 
 class RegularEncoder(nn.Module):

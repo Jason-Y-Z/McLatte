@@ -55,6 +55,7 @@ class TimeSeriesDataModule(pl.LightningDataModule):
         A: np.ndarray,
         T: np.ndarray,
         batch_size: int,
+        use_persistent_workers: True,
     ):
         super().__init__()
 
@@ -65,6 +66,7 @@ class TimeSeriesDataModule(pl.LightningDataModule):
         self._A = A
         self._T = T
         self._batch_size = batch_size
+        self._use_persistent_workers = use_persistent_workers
 
     def setup(self, stage: Optional[str] = None) -> None:
         if stage in (None, "fit"):
@@ -89,6 +91,7 @@ class TimeSeriesDataModule(pl.LightningDataModule):
             batch_size=self._batch_size,
             shuffle=True,
             num_workers=16,
+            persistent_workers=self._use_persistent_workers,
         )
 
     def val_dataloader(self):
@@ -96,6 +99,7 @@ class TimeSeriesDataModule(pl.LightningDataModule):
             self._valid_dataset,
             batch_size=self._batch_size,
             num_workers=4,
+            persistent_workers=self._use_persistent_workers,
         )
 
     def test_dataloader(self):
@@ -103,6 +107,7 @@ class TimeSeriesDataModule(pl.LightningDataModule):
             self._valid_dataset,
             batch_size=self._batch_size,
             num_workers=4,
+            persistent_workers=self._use_persistent_workers,
         )
 
     def predict_dataloader(self):
@@ -110,4 +115,5 @@ class TimeSeriesDataModule(pl.LightningDataModule):
             self._valid_dataset,
             batch_size=self._batch_size,
             num_workers=4,
+            persistent_workers=self._use_persistent_workers,
         )

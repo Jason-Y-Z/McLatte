@@ -8,7 +8,7 @@ import os
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-from .dataset import ShiftingDataModule
+from mclatte.rnn.dataset import ShiftingDataModule
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
@@ -139,7 +139,7 @@ def train_baseline_rnn(
         callbacks=callbacks,
         progress_bar_refresh_rate=0,
         devices=4,
-        accelerator="auto",
+        accelerator='cpu',
     )
 
     trainer.fit(pl_model, data_module)

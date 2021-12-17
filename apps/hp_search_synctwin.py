@@ -10,7 +10,7 @@ import numpy as np
 import os
 import ray
 import wandb
-from synctwin.model import train_synctwin
+from mclatte.synctwin.model import train_synctwin
 from ray import tune
 
 
@@ -77,7 +77,7 @@ def main():
         keep_checkpoints_num=5,
         config=hp_config,
         num_samples=20,
-        verbose=0,
+        verbose=1,
         resume="AUTO",
     )
 

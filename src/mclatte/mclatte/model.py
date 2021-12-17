@@ -8,8 +8,8 @@ import abc
 import os
 import pytorch_lightning as pl
 import torch
-from mclatte.dataset import TimeSeriesDataModule
-from mclatte.repr_learn import ENCODERS, DECODERS
+from mclatte.mclatte.dataset import TimeSeriesDataModule
+from mclatte.mclatte.repr_learn import ENCODERS, DECODERS
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
@@ -199,16 +199,8 @@ class McLatte(SemiSkimmedMcLatte):
 
 def train_mcespresso(
     config: Dict,
-    X,
-    M_,
-    Y_pre,
-    Y_post,
-    A,
-    T,
-    R: int,
-    M: int,
-    input_dim: int,
-    treatment_dim: int,
+    constants,
+    train_data,
     ckpt_path: str,
     make_pl_model: Callable,
     test_run: int = 0,
@@ -220,24 +212,24 @@ def train_mcespresso(
     epochs = config["epochs"]
 
     encoder = ENCODERS[config["encoder_class"]](
-        input_dim=input_dim,
+        input_dim=constants.d,
         hidden_dim=config["hidden_dim"],
-        treatment_dim=treatment_dim,
+        treatment_dim=constants.k,
     )
     decoder = DECODERS[config["decoder_class"]](
         hidden_dim=config["hidden_dim"],
-        output_dim=input_dim,
-        max_seq_len=R * M,
+        output_dim=constants.d,
+        max_seq_len=constants.r * constants.m,
     )
     pl_model = make_pl_model(encoder, decoder)
 
     data_module = TimeSeriesDataModule(
-        X=X,
-        M=M_,
-        Y_pre=Y_pre,
-        Y_post=Y_post,
-        A=A,
-        T=T,
+        X=train_data.x,
+        M=train_data.m,
+        Y_pre=train_data.y_pre,
+        Y_post=train_data.y_post,
+        A=train_data.a,
+        T=train_data.t,
         batch_size=config["batch_size"],
     )
 
@@ -268,8 +260,6 @@ def train_mcespresso(
         logger=logger,
         callbacks=callbacks,
         progress_bar_refresh_rate=0,
-        devices=4,
-        accelerator="auto",
     )
 
     trainer.fit(pl_model, data_module)
@@ -280,17 +270,8 @@ def train_mcespresso(
 
 def train_skimmed_mclatte(
     config: Dict,
-    X,
-    M_,
-    Y_pre,
-    Y_post,
-    A,
-    T,
-    R: int,
-    M: int,
-    H: int,
-    input_dim: int,
-    treatment_dim: int,
+    constants,
+    train_data,
     test_run: int = 0,
     checkpoint_dir=None,  # kept for compatibility with ray[tune]
 ):
@@ -315,22 +296,14 @@ def train_skimmed_mclatte(
             lambda_p=config["lambda_p"],
             lr=lr,
             gamma=gamma,
-            post_trt_seq_len=H,
+            post_trt_seq_len=constants.h,
             hidden_dim=config["hidden_dim"],
         )
 
     return train_mcespresso(
         config,
-        X,
-        M_,
-        Y_pre,
-        Y_post,
-        A,
-        T,
-        R,
-        M,
-        input_dim,
-        treatment_dim,
+        constants,
+        train_data,
         ckpt_path,
         make_skimmed_mclatte,
         test_run,
@@ -339,17 +312,8 @@ def train_skimmed_mclatte(
 
 def train_semi_skimmed_mclatte(
     config: Dict,
-    X,
-    M_,
-    Y_pre,
-    Y_post,
-    A,
-    T,
-    R: int,
-    M: int,
-    H: int,
-    input_dim: int,
-    treatment_dim: int,
+    constants,
+    train_data,
     test_run: int = 0,
     checkpoint_dir=None,  # kept for compatibility with ray[tune]
 ):
@@ -377,23 +341,15 @@ def train_semi_skimmed_mclatte(
             lambda_p=config["lambda_p"],
             lr=lr,
             gamma=gamma,
-            pre_trt_seq_len=M,
-            post_trt_seq_len=H,
+            pre_trt_seq_len=constants.m,
+            post_trt_seq_len=constants.h,
             hidden_dim=config["hidden_dim"],
         )
 
     return train_mcespresso(
         config,
-        X,
-        M_,
-        Y_pre,
-        Y_post,
-        A,
-        T,
-        R,
-        M,
-        input_dim,
-        treatment_dim,
+        constants,
+        train_data,
         ckpt_path,
         make_semi_skimmed_mclatte,
         test_run,
@@ -402,17 +358,8 @@ def train_semi_skimmed_mclatte(
 
 def train_mclatte(
     config: Dict,
-    X,
-    M_,
-    Y_pre,
-    Y_post,
-    A,
-    T,
-    R: int,
-    M: int,
-    H: int,
-    input_dim: int,
-    treatment_dim: int,
+    constants,
+    train_data,
     test_run: int = 0,
     checkpoint_dir=None,  # kept for compatibility with ray[tune]
 ):
@@ -438,23 +385,15 @@ def train_mclatte(
             lambda_p=config["lambda_p"],
             lr=lr,
             gamma=gamma,
-            pre_trt_seq_len=M,
-            post_trt_seq_len=H,
+            pre_trt_seq_len=constants.m,
+            post_trt_seq_len=constants.h,
             hidden_dim=config["hidden_dim"],
         )
 
     return train_mcespresso(
         config,
-        X,
-        M_,
-        Y_pre,
-        Y_post,
-        A,
-        T,
-        R,
-        M,
-        input_dim,
-        treatment_dim,
+        constants,
+        train_data,
         ckpt_path,
         make_mclatte,
         test_run,

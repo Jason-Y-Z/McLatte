@@ -1,5 +1,5 @@
 """ 
-Application script for running baseline RNN model training.
+Application script for running McLatte model training.
 """
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
@@ -10,47 +10,62 @@ import numpy as np
 import os
 import ray
 import wandb
-from rnn.model import train_baseline_rnn
+from mclatte.mclatte.model import train_skimmed_mclatte
 from ray import tune
 
 
 def main():
-    parser = argparse.ArgumentParser("RNN training")
+    # Parsing command line arguments
+    parser = argparse.ArgumentParser("McLatte training")
     parser.add_argument("--data", type=str, default="diabetes")
     args = parser.parse_args()
 
+    # Initialising environment
     wandb.init(project="mclatte-test", entity="jasonyz")
     np.random.seed(509)
     ray.init(address=None)
 
-    _, _, _, _, _, _, _, _, _, Y_pre, Y_post, _, _ = joblib.load(
+    # Load model training dataset
+    _, M, H, R, D, K, _, X, M_, Y_pre, Y_post, A, T = joblib.load(
         os.path.join(os.getcwd(), f"data/{args.data}/hp_search.joblib")
     )
 
+    # Initialise hyper-parameter search space
     hp_config = {
-        "rnn_class": tune.choice(["rnn", "lstm", "gru"]),
+        "encoder_class": tune.choice(["lstm"]),
+        "decoder_class": tune.choice(["lstm"]),
         "hidden_dim": tune.choice([4, 16, 64]),
-        "seq_len": tune.choice([2, 4]),
         "batch_size": tune.choice([64]),
         "epochs": tune.choice([100]),
         "lr": tune.loguniform(1e-4, 1e-0),
         "gamma": tune.uniform(0.5, 0.99),
+        "lambda_r": tune.loguniform(1e-2, 1e2),
+        "lambda_p": tune.loguniform(1e-2, 1e2),
     }
-    sync_config = tune.SyncConfig()
-    rnn_trainable = tune.with_parameters(
-        train_baseline_rnn,
-        Y=np.concatenate((Y_pre, Y_post), axis=1),
-        input_dim=1,
-    )
 
+    # Run hyper-parameter search
+    sync_config = tune.SyncConfig()
+    mclatte_trainable = tune.with_parameters(
+        train_skimmed_mclatte,
+        X=X,
+        M_=M_,
+        Y_pre=Y_pre,
+        Y_post=Y_post,
+        A=A,
+        T=T,
+        R=R,
+        M=M,
+        H=H,
+        input_dim=D,
+        treatment_dim=K,
+    )
     analysis = tune.run(
-        rnn_trainable,
-        name="tune_pl_baseline_rnn",
+        mclatte_trainable,
+        name="tune_pl_skimmed_mclatte",
         local_dir=os.path.join(os.getcwd(), "data"),
         sync_config=sync_config,
         resources_per_trial={
             "cpu": 4,
-            "gpu": 0,
         },
         metric="valid_loss",
         mode="min",
@@ -58,12 +73,12 @@ def main():
         keep_checkpoints_num=5,
         config=hp_config,
         num_samples=20,
-        verbose=0,
+        verbose=1,
         resume="AUTO",
     )
-    analysis.results_df.to_csv(
-        os.path.join(os.getcwd(), "results/baseline_rnn_hp.csv")
-    )
+
+    # Save results
+    analysis.results_df.to_csv(os.path.join(os.getcwd(), "results/skimmed_mclatte_hp.csv"))
 
 
 if __name__ == "__main__":

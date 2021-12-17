@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pytest
 import torch
-from mclatte.simulation_data import generate_simulation_data, TreatmentRepr
+from mclatte.mclatte.simulation_data import generate_simulation_data, TreatmentRepr
 from pytorch_lightning import Trainer
 from rnn.model import BaselineRnn
 from rnn.dataset import ShiftingDataModule
@@ -32,9 +32,8 @@ def test_baseline_rnn(N, M, H, R, D, K, C, mode):
         gamma=0.9,
     )
     trainer = Trainer(
-        default_root_dir=os.path.join(os.getcwd(), "tests/data"),
+        default_root_dir="tests/data/baseline_rnn",
         max_epochs=1,
         progress_bar_refresh_rate=0,
-        log_every_n_steps=1,
     )
     trainer.fit(rnn, data_module)

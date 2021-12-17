@@ -10,7 +10,7 @@ import numpy as np
 import os
 import ray
 import wandb
-from mclatte.model import train_semi_skimmed_mclatte
+from mclatte.mclatte.model import train_semi_skimmed_mclatte
 from ray import tune
 
 
@@ -37,7 +37,7 @@ def main():
         "hidden_dim": tune.choice([4, 16, 64]),
         "batch_size": tune.choice([64]),
         "epochs": tune.choice([100]),
-        "lr": tune.loguniform(1e-4, 1e-0),
+        "lr": tune.loguniform(1e-3, 1e-0),
         "gamma": tune.uniform(0.5, 0.99),
         "lambda_r": tune.loguniform(1e-2, 1e2),
         "lambda_d": tune.loguniform(1e-2, 1e2),
@@ -66,8 +66,7 @@ def main():
         local_dir=os.path.join(os.getcwd(), "data"),
         sync_config=sync_config,
         resources_per_trial={
-            "cpu": 8,
-            "gpu": 1,
+            "cpu": 4,
         },
         metric="valid_loss",
         mode="min",
