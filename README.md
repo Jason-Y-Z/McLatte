@@ -1,4 +1,5 @@
 # McLatte
+![Pytest](https://github.com/Jason-Y-Z/McLatte/actions/workflows/python-package.yml/badge.svg)
 
 Multi-Cause LAtent facTor iTe Estimator
 
@@ -7,7 +8,7 @@ Multi-Cause LAtent facTor iTe Estimator
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install mclatte.
 
 ```bash
-pip install mclatte
+pip install .
 ```
 
 ## Usage
