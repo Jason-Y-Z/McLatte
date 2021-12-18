@@ -1,5 +1,5 @@
 import pytest
-from mclatte.mclatte.simulation_data import (
+from mclatte.test_data.idt import (
     generate_simulation_data,
     simulate_covariates,
     simulate_masking_vectors,

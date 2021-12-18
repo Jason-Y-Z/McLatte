@@ -38,11 +38,11 @@ def test_skimmed_mclatte(
         test_run=run_idx,
     )
     _, y_tilde = infer_mcespresso(
-        trained_skimmed_mclatte, test_data.x, test_data.a, test_data.t, test_data.m
+        trained_skimmed_mclatte, test_data["x"], test_data["a"], test_data["t"], test_data["m"]
     )
 
     return torch.nn.functional.l1_loss(
-        y_tilde, torch.from_numpy(test_data.y_post).float()
+        y_tilde, torch.from_numpy(test_data["y_post"]).float()
     ).item()
 
 
@@ -60,11 +60,11 @@ def test_semi_skimmed_mclatte(
         test_run=run_idx,
     )
     _, _, y_tilde = infer_mcespresso(
-        trained_semi_skimmed_mclatte, test_data.x, test_data.a, test_data.t, test_data.m
+        trained_semi_skimmed_mclatte, test_data["x"], test_data["a"], test_data["t"], test_data["m"]
     )
 
     return torch.nn.functional.l1_loss(
-        y_tilde, torch.from_numpy(test_data.y_post).float()
+        y_tilde, torch.from_numpy(test_data["y_post"]).float()
     ).item()
 
 
@@ -82,11 +82,11 @@ def test_mclatte(
         test_run=run_idx,
     )
     _, _, y_tilde = infer_mcespresso(
-        trained_mclatte, test_data.x, test_data.a, test_data.t, test_data.m
+        trained_mclatte, test_data["x"], test_data["a"], test_data["t"], test_data["m"]
     )
 
     return torch.nn.functional.l1_loss(
-        y_tilde, torch.from_numpy(test_data.y_post).float()
+        y_tilde, torch.from_numpy(test_data["y_post"]).float()
     ).item()
 
 
@@ -98,11 +98,11 @@ def test_rnn(
 ):
     trained_rnn = train_baseline_rnn(
         rnn_config,
-        Y=np.concatenate((train_data.y_pre, train_data.y_post), axis=1),
+        Y=np.concatenate((train_data["y_pre"], train_data["y_post"]), axis=1),
         input_dim=1,
         test_run=run_idx,
     )
-    return infer_rnn(trained_rnn, test_data.y_pre, test_data.y_post)
+    return infer_rnn(trained_rnn, test_data["y_pre"], test_data["y_post"])
 
 
 def test_synctwin(
@@ -112,9 +112,9 @@ def test_synctwin(
     test_data,
     run_idx=0,
 ):
-    train_data["y_mask"] = np.all(train_data.a == 0, axis=1)
-    test_data["y_mask"] = np.all(test_data.a == 0, axis=1)
-    train_data["y_control"] = train_data.y_post[train_data.y_mask]
+    train_data["y_mask"] = np.all(train_data["a"] == 0, axis=1)
+    test_data["y_mask"] = np.all(test_data["a"] == 0, axis=1)
+    train_data["y_control"] = train_data["y_post"][train_data["y_mask"]]
 
     trained_synctwin = train_synctwin(
         synctwin_config,
@@ -125,12 +125,12 @@ def test_synctwin(
 
     trained_synctwin.eval()
     _, l1_loss = trained_synctwin(
-        torch.from_numpy(test_data.x).float().cpu(),
-        torch.from_numpy(test_data.t).float().cpu(),
-        torch.from_numpy(test_data.m).float().cpu(),
-        torch.arange(0, test_data.n).cpu(),
-        torch.from_numpy(test_data.y_post).float().cpu(),
-        torch.from_numpy(test_data.y_mask).float().cpu(),
+        torch.from_numpy(test_data["x"]).float().cpu(),
+        torch.from_numpy(test_data["t"]).float().cpu(),
+        torch.from_numpy(test_data["m"]).float().cpu(),
+        torch.arange(0, test_data["n"]).cpu(),
+        torch.from_numpy(test_data["y_post"]).float().cpu(),
+        torch.from_numpy(test_data["y_mask"]).float().cpu(),
     )
     return l1_loss.item()
 

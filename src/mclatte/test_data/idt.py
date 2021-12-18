@@ -5,8 +5,10 @@ Data generation utilities for the simulation study.
 # License: BSD 3 clause
 
 import enum
+from dataclasses import dataclass
 from typing import Callable, Tuple, Union
 
+import joblib
 import numpy as np
 
 
@@ -445,3 +447,112 @@ def generate_simulation_data(
         axis=0,
     )
     return X[:, : M * R, :], M_[:, : M * R, :], Y_pre, Y_post, A, T[:, : M * R, :]
+
+
+@dataclass
+class SimDataGenConfig:
+    """
+    Configurations for simulated data generation.
+    """
+
+    n: int = 200
+    p_0: float = 0.1
+    mode: TreatmentRepr = TreatmentRepr.BINARY
+    m: int = 5
+    h: int = 5
+    r: int = 5
+    d: int = 3
+    k: int = 4
+    c: int = 8
+
+
+def generate_data(
+    constants: SimDataGenConfig, run_idx: int = 0, return_raw: bool = True
+):
+    """
+    Generate a training and testing dataset of idealised disease treatment.
+    """
+    data_path = (
+        f"data/test/idt_{constants.n}_{constants.p_0}_{constants.mode}_{run_idx}.joblib"
+    )
+    try:
+        all_data = joblib.load(data_path)
+        (
+            _,
+            N_train,
+            N_test,
+            X_train,
+            X_test,
+            M_train,
+            M_test,
+            Y_pre_train,
+            Y_pre_test,
+            Y_post_train,
+            Y_post_test,
+            A_train,
+            A_test,
+            T_train,
+            T_test,
+        ) = all_data
+    except Exception as e:  # pylint: disable=broad-except
+        print(e)
+        N_train = round(constants.n * 0.8)
+        N_test = round(constants.n * 0.2)
+        X, M_, Y_pre, Y_post, A, T = generate_simulation_data(
+            constants.n,
+            constants.m,
+            constants.h,
+            constants.r,
+            constants.d,
+            constants.k,
+            constants.c,
+            constants.mode,
+            constants.p_0,
+        )
+        X_train, X_test = X[:N_train], X[N_train:]
+        M_train, M_test = M_[:N_train], M_[N_train:]
+        Y_pre_train, Y_pre_test = Y_pre[:N_train], Y_pre[N_train:]
+        Y_post_train, Y_post_test = Y_post[:N_train], Y_post[N_train:]
+        A_train, A_test = A[:N_train], A[N_train:]
+        T_train, T_test = T[:N_train], T[N_train:]
+        all_data = (
+            constants.n,
+            N_train,
+            N_test,
+            X_train,
+            X_test,
+            M_train,
+            M_test,
+            Y_pre_train,
+            Y_pre_test,
+            Y_post_train,
+            Y_post_test,
+            A_train,
+            A_test,
+            T_train,
+            T_test,
+        )
+        joblib.dump(all_data, data_path)
+
+    if return_raw:
+        return all_data
+
+    train_data = dict(
+        n=N_train,
+        x=X_train,
+        m=M_train,
+        y_pre=Y_pre_train,
+        y_post=Y_post_train,
+        a=A_train,
+        t=T_train,
+    )
+    test_data = dict(
+        n=N_test,
+        x=X_test,
+        m=M_test,
+        y_pre=Y_pre_test,
+        y_post=Y_post_test,
+        a=A_test,
+        t=T_test,
+    )
+    return constants.n, train_data, test_data

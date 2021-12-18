@@ -1,6 +1,6 @@
 import pytest
 from mclatte.mclatte.dataset import McLatteDataset
-from mclatte.mclatte.simulation_data import generate_simulation_data, TreatmentRepr
+from mclatte.test_data.idt import generate_simulation_data, TreatmentRepr
 from torch.utils.data import DataLoader
 
 
