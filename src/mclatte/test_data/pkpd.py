@@ -5,12 +5,15 @@ https://github.com/vanderschaarlab/SyncTwin-NeurIPS-2021
 # Author: Jason Zhang (yurenzhang2017@gmail.com)
 # License: BSD 3 clause
 
+from dataclasses import dataclass
+
 import numpy as np
 import numpy.random
 import scipy.integrate
 import torch
 
 from mclatte.synctwin._config import DEVICE
+from mclatte.test_data import io_utils
 
 
 def f(t, y, Kin, K, O, H, D50):
@@ -92,7 +95,7 @@ def get_clustered_Kin(Kin_b, n_cluster, n_sample_total):
     return Kin_list, Kin_b
 
 
-def generate_data(
+def generate_control_data(
     Kin_list, K_list, P0_list, R0_list, train_step, H=0.1, D50=3, step=30
 ):
 
@@ -210,3 +213,138 @@ def get_treatment_effect(
     return torch.tensor(
         treat_res_arr - treat_counterfactual_arr, device=device
     ).permute((1, 2, 0))[train_step:, :, 1:2]
+
+
+@dataclass
+class PkpdDataGenConfig:
+    """
+    Configurations for PKPD data generation.
+    """
+
+    n: int = 200
+    p_0: str = "0.1"
+    seed: int = 509
+    m: int = 5
+    h: int = 5
+    r: int = 5
+    d: int = 3
+    k: int = 1
+    c: int = 3
+
+
+def generate_data(constants: PkpdDataGenConfig, return_raw=True):
+    """
+    Generate a training and testing dataset of PKPD.
+    """
+    base_path_data = f"data/pkpd/{constants.p_0}_{constants.n}-seed-{constants.seed}"
+    data_path = base_path_data + "/{}-{}.{}"
+
+    # loading config and data
+    io_utils.load_config(data_path, "train")
+    x_full, t_full, mask_full, _, y_full, _, _, _, _, _ = io_utils.load_tensor(
+        data_path, "train", device="cpu"
+    )
+    (
+        x_full_val,
+        t_full_val,
+        mask_full_val,
+        _,
+        y_full_val,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = io_utils.load_tensor(data_path, "val", device="cpu")
+
+    x = np.concatenate((x_full.cpu().numpy(), x_full_val.cpu().numpy()), axis=1)
+    t = np.concatenate((t_full.cpu().numpy(), t_full_val.cpu().numpy()), axis=1)
+    mask = np.concatenate(
+        (mask_full.cpu().numpy(), mask_full_val.cpu().numpy()), axis=1
+    )
+    y = np.concatenate(
+        (y_full.cpu().numpy(), y_full_val.cpu().numpy()), axis=1
+    ).squeeze()
+
+    X = x.transpose((1, 0, 2))
+    N = X.shape[0]
+    rand_index = np.random.permutation(N)
+    X = X[rand_index]
+    M_ = mask.transpose((1, 0, 2))[rand_index]
+    Y_pre = y.T[rand_index]
+    Y_post = y.T[rand_index]
+    A = np.concatenate(
+        (
+            np.zeros((N // 4, 1)),
+            np.ones((N // 4, 1)),
+            np.zeros((N // 4, 1)),
+            np.ones((N // 4, 1)),
+        ),
+        axis=0,
+    )[rand_index]
+    T = t.transpose((1, 0, 2))[rand_index]
+
+    N_train = round(N * 0.8)
+    N_test = round(N * 0.2)
+    X_train, X_test = X[:N_train], X[N_train:]
+    M_train, M_test = M_[:N_train], M_[N_train:]
+    Y_pre_train, Y_pre_test = Y_pre[:N_train], Y_pre[N_train:]
+    Y_post_train, Y_post_test = Y_post[:N_train], Y_post[N_train:]
+    A_train, A_test = A[:N_train], A[N_train:]
+    T_train, T_test = T[:N_train], T[N_train:]
+
+    all_data = (
+        (
+            N_train,
+            constants.m,
+            constants.h,
+            constants.r,
+            constants.d,
+            constants.k,
+            constants.c,
+            X_train,
+            M_train,
+            Y_pre_train,
+            Y_post_train,
+            A_train,
+            T_train,
+        ),
+        (
+            N_test,
+            constants.m,
+            constants.h,
+            constants.r,
+            constants.d,
+            constants.k,
+            constants.c,
+            X_test,
+            M_test,
+            Y_pre_test,
+            Y_post_test,
+            A_test,
+            T_test,
+        ),
+    )
+
+    if return_raw:
+        return all_data
+
+    train_data = dict(
+        n=N_train,
+        x=X_train,
+        m=M_train,
+        y_pre=Y_pre_train,
+        y_post=Y_post_train,
+        a=A_train,
+        t=T_train,
+    )
+    test_data = dict(
+        n=N_test,
+        x=X_test,
+        m=M_test,
+        y_pre=Y_pre_test,
+        y_post=Y_post_test,
+        a=A_test,
+        t=T_test,
+    )
+    return N, train_data, test_data

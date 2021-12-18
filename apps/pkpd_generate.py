@@ -13,14 +13,14 @@ import numpy.random
 import torch
 
 from mclatte.synctwin._config import DEVICE
-from mclatte.synctwin.pkpd import (
+from mclatte.test_data.pkpd import (
     get_Kin,
     get_clustered_Kin,
     get_covariate,
     get_treatment_effect,
-    generate_data,
+    generate_control_data,
 )
-from mclatte.synctwin.io_utils import create_paths
+from mclatte.test_data.io_utils import create_paths
 
 
 parser = argparse.ArgumentParser("PKPD simulation: data generation")
@@ -75,7 +75,7 @@ for fold in ["test", "val", "train"]:
     P0_list = [0.25]
     R0_list = [0.5]
 
-    control_res_arr = generate_data(
+    control_res_arr = generate_control_data(
         control_Kin_list,
         K_list,
         P0_list,
@@ -85,7 +85,7 @@ for fold in ["test", "val", "train"]:
         D50=0.1,
         step=step,
     )
-    treat_res_arr = generate_data(
+    treat_res_arr = generate_control_data(
         treat_Kin_list,
         K_list,
         P0_list,
@@ -95,7 +95,7 @@ for fold in ["test", "val", "train"]:
         D50=0.1,
         step=step,
     )
-    treat_counterfactual_arr = generate_data(
+    treat_counterfactual_arr = generate_control_data(
         treat_Kin_list,
         K_list,
         P0_list,

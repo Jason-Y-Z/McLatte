@@ -66,7 +66,7 @@ class McLatteDataModule(pl.LightningDataModule):
         A: np.ndarray,
         T: np.ndarray,
         batch_size: int,
-        use_persistent_workers: True,
+        use_persistent_workers: bool = True,
     ):
         super().__init__()
 

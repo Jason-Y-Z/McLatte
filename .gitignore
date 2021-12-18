@@ -12,6 +12,7 @@ data/test/
 data/tune_*
 data/mclatte-test/
 wandb/
+experiments/wandb/
 tests/data
 
 # Distribution / packaging
@@ -37,7 +38,6 @@ MANIFEST
 
 # Documents
 documents/
-plots/
 
 # Results/
 results/**/trained_models

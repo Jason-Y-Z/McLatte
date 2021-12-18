@@ -224,8 +224,8 @@ class SyncTwinPl(pl.LightningModule):
 
 def train_synctwin(
     config: Dict,
-    constants,
-    train_data,
+    constants: Dict,
+    train_data: Dict,
     test_run: int = 0,
     device=DEVICE,
     ckpt_path=None,
@@ -249,15 +249,15 @@ def train_synctwin(
         except Exception as e:  # pylint: disable=broad-except
             print(e)
 
-    enc = RegularEncoder(input_dim=constants.d, hidden_dim=config["hidden_dim"])
+    enc = RegularEncoder(input_dim=constants["d"], hidden_dim=config["hidden_dim"])
     dec = RegularDecoder(
         hidden_dim=enc.hidden_dim,
         output_dim=enc.input_dim,
-        max_seq_len=constants.r * constants.m,
+        max_seq_len=constants["r"] * constants["m"],
     )
     sync_twin = SyncTwin(
-        n_unit=train_data.y_control.shape[0],
-        n_treated=train_data.n - train_data.y_control.shape[0],
+        n_unit=train_data["y_control"].shape[0],
+        n_treated=train_data["n"] - train_data["y_control"].shape[0],
         reg_B=config["reg_B"],
         lam_express=config["lam_express"],
         lam_recon=config["lam_recon"],
@@ -271,15 +271,15 @@ def train_synctwin(
         sync_twin=sync_twin,
         lr=lr,
         gamma=gamma,
-        y_control=torch.from_numpy(train_data.y_control).float().to(device),
+        y_control=torch.from_numpy(train_data["y_control"]).float().to(device),
     )
 
     data_module = SyncTwinDataModule(
-        X=train_data.x,
-        M=train_data.m,
-        T=train_data.t,
-        Y_batch=train_data.y_post,
-        Y_mask=train_data.y_mask,
+        X=train_data["x"],
+        M=train_data["m"],
+        T=train_data["t"],
+        Y_batch=train_data["y_post"],
+        Y_mask=train_data["y_mask"],
         batch_size=config["batch_size"],
     )
     metrics = {"loss": "ptl/loss", "valid_loss": "ptl/valid_loss"}

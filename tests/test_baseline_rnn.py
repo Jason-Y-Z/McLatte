@@ -2,9 +2,9 @@ import os
 import numpy as np
 import pytest
 import torch
-from mclatte.mclatte.simulation_data import generate_simulation_data, TreatmentRepr
 from mclatte.rnn.model import BaselineRnn
 from mclatte.rnn.dataset import ShiftingDataModule
+from mclatte.test_data.idt import generate_simulation_data, TreatmentRepr
 from pytorch_lightning import Trainer
 
 

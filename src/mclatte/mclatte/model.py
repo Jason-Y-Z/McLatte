@@ -212,8 +212,8 @@ class McLatte(SemiSkimmedMcLatte):
 
 def train_mcespresso(
     config: Dict,
-    constants,
-    train_data,
+    constants: Dict,
+    train_data: Dict,
     ckpt_path: str,
     make_pl_model: Callable,
     test_run: int = 0,
@@ -225,24 +225,24 @@ def train_mcespresso(
     epochs = config["epochs"]
 
     encoder = ENCODERS[config["encoder_class"]](
-        input_dim=constants.d,
+        input_dim=constants["d"],
         hidden_dim=config["hidden_dim"],
-        treatment_dim=constants.k,
+        treatment_dim=constants["k"],
     )
     decoder = DECODERS[config["decoder_class"]](
         hidden_dim=config["hidden_dim"],
-        output_dim=constants.d,
-        max_seq_len=constants.r * constants.m,
+        output_dim=constants["d"],
+        max_seq_len=constants["r"] * constants["m"],
     )
     pl_model = make_pl_model(encoder, decoder)
 
     data_module = McLatteDataModule(
-        X=train_data.x,
-        M=train_data.m,
-        Y_pre=train_data.y_pre,
-        Y_post=train_data.y_post,
-        A=train_data.a,
-        T=train_data.t,
+        X=train_data["x"],
+        M=train_data["m"],
+        Y_pre=train_data["y_pre"],
+        Y_post=train_data["y_post"],
+        A=train_data["a"],
+        T=train_data["t"],
         batch_size=config["batch_size"],
     )
 
@@ -293,8 +293,8 @@ def infer_mcespresso(trained_mcespresso, x, a, t, m):
 
 def train_skimmed_mclatte(
     config: Dict,
-    constants,
-    train_data,
+    constants: Dict,
+    train_data: Dict,
     test_run: int = 0,
     # kept for compatibility with ray[tune]
     checkpoint_dir=None,  # pylint: disable=unused-argument
@@ -320,7 +320,7 @@ def train_skimmed_mclatte(
             lambda_p=config["lambda_p"],
             lr=lr,
             gamma=gamma,
-            post_trt_seq_len=constants.h,
+            post_trt_seq_len=constants["h"],
             hidden_dim=config["hidden_dim"],
         )
 
@@ -336,8 +336,8 @@ def train_skimmed_mclatte(
 
 def train_semi_skimmed_mclatte(
     config: Dict,
-    constants,
-    train_data,
+    constants: Dict,
+    train_data: Dict,
     test_run: int = 0,
     checkpoint_dir=None,  # pylint: disable=unused-argument
 ):
@@ -365,8 +365,8 @@ def train_semi_skimmed_mclatte(
             lambda_p=config["lambda_p"],
             lr=lr,
             gamma=gamma,
-            pre_trt_seq_len=constants.m,
-            post_trt_seq_len=constants.h,
+            pre_trt_seq_len=constants["m"],
+            post_trt_seq_len=constants["h"],
             hidden_dim=config["hidden_dim"],
         )
 
@@ -382,8 +382,8 @@ def train_semi_skimmed_mclatte(
 
 def train_mclatte(
     config: Dict,
-    constants,
-    train_data,
+    constants: Dict,
+    train_data: Dict,
     test_run: int = 0,
     checkpoint_dir=None,  # pylint: disable=unused-argument
 ):
@@ -409,8 +409,8 @@ def train_mclatte(
             lambda_p=config["lambda_p"],
             lr=lr,
             gamma=gamma,
-            pre_trt_seq_len=constants.m,
-            post_trt_seq_len=constants.h,
+            pre_trt_seq_len=constants["m"],
+            post_trt_seq_len=constants["h"],
             hidden_dim=config["hidden_dim"],
         )
 
