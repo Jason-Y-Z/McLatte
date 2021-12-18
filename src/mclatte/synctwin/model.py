@@ -172,7 +172,7 @@ class SyncTwinPl(pl.LightningModule):
         super().__init__()
 
         self.save_hyperparameters()
-        self.sync_twin = sync_twin
+        self._sync_twin = sync_twin
         self._lr = lr
         self._gamma = gamma
         self._y_control = y_control
@@ -188,7 +188,7 @@ class SyncTwinPl(pl.LightningModule):
     def forward(
         self, x, t, mask, batch_ind, y_batch, y_mask, return_C=False
     ):  # pylint: disable=arguments-differ
-        loss, l1_loss, C = self.sync_twin(
+        loss, l1_loss, C = self._sync_twin(
             torch.transpose(x, 0, 1),
             torch.transpose(t, 0, 1),
             torch.transpose(mask, 0, 1),
@@ -319,6 +319,6 @@ def train_synctwin(
 
 def infer_synctwin(trained_synctwin, N_test, Y_post_test):
     trained_synctwin.eval()
-    return trained_synctwin.sync_twin.get_prognostics(
+    return trained_synctwin._sync_twin.get_prognostics(  # pylint: disable=protected-access
         torch.arange(0, N_test).cpu(), torch.from_numpy(Y_post_test).float().cpu()
     )
