@@ -8,22 +8,126 @@ Multi-Cause LAtent facTor iTe Estimator
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install mclatte.
 
 ```bash
+pip install -r requirements.txt
 pip install .
 ```
 
 ## Usage
 
+An example workflow with McLatte and idealised disease treatment is illustrated below
+
 ```python
-import foobar
+import joblib
+from mclatte.mclatte.model import (
+    infer_mcespresso,
+    train_mclatte,
+)
+from mclatte.mclatte.simulation_data import (
+    generate_simulation_data, 
+    TreatmentRepr,
+)
 
-# returns 'words'
-foobar.pluralize('word')
+M = 5
+H = 5
+R = 5
+D = 10
+K = 3
+C = 4
+constants = dict(m=M, h=H, r=R, d=D, k=K, c=C)
 
-# returns 'geese'
-foobar.pluralize('goose')
 
-# returns 'phenomenon'
-foobar.singularize('phenomena')
+# An example data generation pipeline
+def generate_data(N, p_0, mode, run_idx=0, return_raw=True):
+    data_path = f"data/test/idt_{N}_{p_0}_{mode}_{run_idx}.joblib"
+    try:
+        all_data = joblib.load(data_path)
+    except Exception as e:
+        print(e)
+        N_train = round(N * 0.8)
+        N_test = round(N * 0.2)
+        X, M_, Y_pre, Y_post, A, T = generate_simulation_data(
+            N, M, H, R, D, K, C, mode, p_0
+        )
+        X_train, X_test = X[:N_train], X[N_train:]
+        M_train, M_test = M_[:N_train], M_[N_train:]
+        Y_pre_train, Y_pre_test = Y_pre[:N_train], Y_pre[N_train:]
+        Y_post_train, Y_post_test = Y_post[:N_train], Y_post[N_train:]
+        A_train, A_test = A[:N_train], A[N_train:]
+        T_train, T_test = T[:N_train], T[N_train:]
+        all_data = (
+            N,
+            N_train,
+            N_test,
+            X_train,
+            X_test,
+            M_train,
+            M_test,
+            Y_pre_train,
+            Y_pre_test,
+            Y_post_train,
+            Y_post_test,
+            A_train,
+            A_test,
+            T_train,
+            T_test,
+        )
+        joblib.dump(all_data, data_path)
+
+    if return_raw:
+        return all_data
+
+    train_data = dict(
+        n=N_train,
+        x=X_train,
+        m=M_train,
+        y_pre=Y_pre_train,
+        y_post=Y_post_train,
+        a=A_train,
+        t=T_train,
+    )
+    test_data = dict(
+        n=N_test,
+        x=X_test,
+        m=M_test,
+        y_pre=Y_pre_test,
+        y_post=Y_post_test,
+        a=A_test,
+        t=T_test,
+    )
+    return N, train_data, test_data
+
+# Generate data
+(
+    _,
+    train_data,
+    test_data,
+) = generate_data(200, 0.1, TreatmentRepr.BINARY, return_raw=False)
+
+# Example McLatte configurations
+mclatte_config = {
+    "encoder_class": "lstm",
+    "decoder_class": "lstm",
+    "hidden_dim": 16,
+    "batch_size": 64,
+    "epochs": 100,
+    "lr": 0.024468,
+    "gamma": 0.740409,
+    "lambda_r": 0.040299,
+    "lambda_d": 0.034368,
+    "lambda_p": 0.021351,
+}
+
+# Training
+trained_mclatte = train_mclatte(
+    mclatte_config,
+    constants,
+    train_data,
+)
+
+# Inference
+_, _, y_tilde = infer_mcespresso(
+    trained_mclatte, test_data.x, test_data.a, test_data.t, test_data.m
+)
 ```
 
 ## Contributing
