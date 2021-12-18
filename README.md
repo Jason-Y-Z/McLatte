@@ -12,6 +12,11 @@ pip install -r requirements.txt
 pip install .
 ```
 
+## Setup
+
+We recommend using [wandb](https://wandb.ai/) if you plan to tune the model on your dataset.
+Please replace our settings with yours.
+
 ## Usage
 
 An example workflow with McLatte and idealised disease treatment is illustrated below
@@ -21,7 +26,7 @@ from mclatte.mclatte.model import (
     infer_mcespresso,
     train_mclatte,
 )
-from mclatte.mclatte.simulation_data import (
+from mclatte.test_data.idt import (
     generate_data, 
     TreatmentRepr,
     SimDataGenConfig

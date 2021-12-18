@@ -1,0 +1,6 @@
+# This is a local results directory. 
+# Ignore everything in this directory
+*
+# Except this file
+!.gitignore
+!test
