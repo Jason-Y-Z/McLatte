@@ -19,7 +19,7 @@ Please replace our settings with yours.
 
 ## Usage
 
-An example workflow with McLatte and idealised disease treatment is illustrated below
+An example workflow with McLatte and idealised disease treatment is illustrated below. More experiments see the [experiments](https://github.com/Jason-Y-Z/McLatte/tree/main/experiments) directory.
 
 ```python
 from mclatte.mclatte.model import (
